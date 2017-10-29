@@ -1,8 +1,8 @@
 import pygame
 from pygame.locals import *
-
 import sys
 import const
+
 class GameWindow(object):
 
     def __init__(self, fullscreen=False):
@@ -28,7 +28,6 @@ class Game(object):
         self.screen = screen
         self.restart = True
         self.timer = pygame.time.Clock()
-        self.read_save()
 
     def loop(self):
         running = True
@@ -41,12 +40,6 @@ class Game(object):
                 return
             running = manager.scene.loop()
 
-
-    def read_save(self):
-        pass
-
-
-
 class SceneMananger(object):
     def __init__(self, screen):
         self.screen = screen
@@ -57,6 +50,8 @@ class SceneMananger(object):
         self.scene.scene_manager = self
 
 
+# TODO
+# class StageChooseScene
 
 class TitleScene(object):
 
@@ -65,12 +60,13 @@ class TitleScene(object):
         self.screen = screen
         self.running = True
         self.clock = pygame.time.Clock()
-
+        self.save = [0, 0, 0]
+        self.read_save()
         self.font = pygame.font.SysFont('Arial', 40)
         self.bg = pygame.image.load('image/bg.png').convert_alpha()
-        self.stage1 = StageIcon(1, (20, 100), 1)
-        self.stage2 = StageIcon(2, (140, 100), 2)
-        self.stage3 = StageIcon(3, (260, 100), 3)
+        self.stage1 = StageIcon(1, (20, 100), self.save[0])
+        self.stage2 = StageIcon(2, (140, 100), self.save[1])
+        self.stage3 = StageIcon(3, (260, 100), self.save[2])
         self.stages = [self.stage1, self.stage2, self.stage3]
         self.mouse_interactable = self.stages
 
@@ -101,8 +97,11 @@ class TitleScene(object):
 
         return True
 
-    def update(self):
-        pass
+    def read_save(self):
+        with open('save/save') as save_file:
+            for i, line in enumerate(save_file):
+                if i < 3:
+                    self.save[i] = line[:-1]
 
     def on_keydown(self, event):
         self.scene_manager.go_to(Scene(self.screen))
@@ -113,6 +112,7 @@ class TitleScene(object):
             if item.rect.collidepoint(event.pos) and isinstance(item, StageIcon):
                 self.running = False
                 self.scene_manager.go_to(Scene(self.screen, item.stage_id))
+
 
 class StageIcon(pygame.sprite.Sprite):
     def __init__(self, stage_id, pos, rating):
@@ -140,20 +140,19 @@ class Scene(object):
         self.icons = []
         self.mouse_interactable = []
         self.bg = pygame.image.load('image/bg.png').convert_alpha()
-        #self.stage_id = stage_id
-        self.icon_bar = IconBar((10, 50))
+        self.move_bar = MoveBar((10, 50))
         self.character_timeline = CharacterTimeline((50, 320))
-
-
+        self.stage_id = stage_id
+        self.rating = 0
         self.character = Character(initial_pos, self)
         self.maze = Maze((80, 30), self, stage_id)
         self.return_layer = ReturnLayer((10, 20))
 
+        self.timeline_pointer = TimelinePointer(self.character, self.character_timeline, self.character_timeline.pos)
+        self.win_layer = WinLayer((100, 100), self)
+
         self.mouse_interactable.append(self.return_layer)
-
-
-        self.timeline_pointer = Timeline_pointer(self.character, self.character_timeline, self.character_timeline.pos)
-
+        self.mouse_interactable.append(self.win_layer)
 
         #self.screen = pygame.surface.Surface((const.REAL_WIDTH, const.REAL_HEIGHT))
 
@@ -184,7 +183,7 @@ class Scene(object):
 
             for icon in self.icons:
                 icon.con.clear(self.screen, self.bg)
-            self.icon_bar.con.clear(self.screen, self.bg)
+            self.move_bar.con.clear(self.screen, self.bg)
             self.character_timeline.con.clear(self.screen, self.bg)
             self.timeline_pointer.con.clear(self.screen, self.bg)
             self.maze.con.clear(self.screen, self.bg)
@@ -198,7 +197,7 @@ class Scene(object):
 
             for icon in self.icons:
                 icon.con.update(dt)
-            self.icon_bar.con.update(dt)
+            self.move_bar.con.update(dt)
             self.character_timeline.con.update(dt)
             self.timeline_pointer.con.update(dt)
             self.maze.con.update(dt)
@@ -207,11 +206,14 @@ class Scene(object):
             self.character.con.update(self.maze, dt)
             self.return_layer.con.update(dt)
 
+            if self.character.out:
+                self.win_layer.con.update(dt)
+
 
             # draw
             update_rects = []
 
-            update_rects += self.icon_bar.con.draw(self.screen)
+            update_rects += self.move_bar.con.draw(self.screen)
             update_rects += self.character_timeline.con.draw(self.screen)
 
             update_rects += self.maze.con.draw(self.screen)
@@ -222,6 +224,9 @@ class Scene(object):
             for icon in self.icons:
                 update_rects += icon.con.draw(self.screen)
             update_rects += self.return_layer.con.draw(self.screen)
+            if self.character.out:
+                update_rects += self.win_layer.con.draw(self.screen)
+
 
             # scaling and updating
             #scaled_update_rects = [pygame.Rect(2*r.left - 4, 2*r.top - 4, 2*r.width + 8, 2*r.height + 8) for r in update_rects]
@@ -229,6 +234,8 @@ class Scene(object):
             #pygame.display.update(scaled_update_rects)
             pygame.display.update(update_rects)
 
+            if self.character.out:
+                self.save_to_file()
         return self.running
 
     def on_keyup(self, event):
@@ -240,7 +247,6 @@ class Scene(object):
             self.character.stop_up()
         elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
             self.character.stop_down()
-
 
     def on_keydown(self, event):
         if event.key == pygame.K_LEFT or event.key == pygame.K_a:
@@ -262,8 +268,6 @@ class Scene(object):
             self.maze.reset()
             self.character.reset()
 
-
-
     def on_mouseup(self, event):
         for item in self.mouse_interactable:
             if isinstance(item, MoveIcon):
@@ -274,26 +278,25 @@ class Scene(object):
                         item.off_set_y = 0
                         item.pos[1] = self.character_timeline.pos[1] \
                         + self.character_timeline.rect.height/2 - item.rect.height/2 # y pos of timeline
-                        if item in self.icon_bar.icons:
-                            self.icon_bar.remove_icon(item)
+                        if item in self.move_bar.icons:
+                            self.move_bar.remove_icon(item)
                         elif item in self.character_timeline.moves:
                             self.character_timeline.remove_move(item)
                         self.character_timeline.add_move(item, item.pos[0])
-                    elif item.rect.colliderect(self.icon_bar):
+                    elif item.rect.colliderect(self.move_bar):
                         item.is_drag = False
                         item.off_set_x = 0
                         item.off_set_y = 0
-                        if item in self.icon_bar.icons:
-                            self.icon_bar.remove_icon(item)
+                        if item in self.move_bar.icons:
+                            self.move_bar.remove_icon(item)
                         elif item in self.character_timeline.moves:
                             self.character_timeline.remove_move(item)
-                        self.icon_bar.add_icon(item)
+                        self.move_bar.add_icon(item)
                     else:
                         item.is_drag = False
                         item.off_set_x = 0
                         item.off_set_y = 0
                         item.pos = [item.original_pos[0], item.original_pos[1]]
-
 
     def on_mousedown(self, event):
         for item in self.mouse_interactable:
@@ -306,19 +309,75 @@ class Scene(object):
             elif item.rect.collidepoint(event.pos) and isinstance(item, ReturnLayer):
                 self.running = False
                 self.scene_manager.go_to(TitleScene(self.screen))
+            elif item.rect.collidepoint(event.pos) and isinstance(item, WinLayer):
+                return_rect = pygame.rect.Rect(item.rect.left + 50 ,item.rect.top + 95, 75, 15)
+                if return_rect.collidepoint(event.pos):
+                    self.running = False
+                    self.scene_manager.go_to(TitleScene(self.screen))
 
-class MoveIcon(pygame.sprite.Sprite):
+    def save_to_file(self):
+        ratings = []
+        with open('save/save', 'r') as f:
+            for i, line in enumerate(f):
+                if i == self.stage_id-1:
+                    ratings.append(str(self.rating))
+                elif line:
+                    ratings.append(line[:-1])
+
+        with open('save/save', 'w') as f:
+            for l in ratings:
+                f.write(l + '\n')
+
+class ToolIcon(pygame.sprite.Sprite):
     def __init__(self, typ):
         pygame.sprite.Sprite.__init__(self)
         self.pos = [0, 0]
-        self.image = pygame.image.load("image/" + typ + ".png").convert_alpha()
+        self.image = pygame.image.load("image/tool-" + typ + ".png").convert_alpha()
         self.typ = typ
         self.rect = self.image.get_rect()
         self.is_drag = False
         self.off_set_x = 0
         self.off_set_y = 0
         self.original_pos = [0, 0]
-        self.in_icon_bar = True
+        self.in_move_bar = True
+        self.in_timeline = False
+        self.con = pygame.sprite.RenderUpdates(self)
+
+class ToolBar(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        pygame.sprite.Sprite.__init__(self)
+        self.pos = list(pos)
+        self.image = pygame.image.load("image/tool_bar.png").convert_alpha()
+        self.rect = self.image.get_rect()
+        self.con = pygame.sprite.RenderUpdates(self)
+        self.icons = []
+
+    def add_icon(self, icon):
+        self.icons.append(icon)
+        for i, icon in enumerate(self.icons):
+            icon.pos = [self.pos[0] + 3, self.pos[1] + 10 + 30*i]
+        #print self.icons
+
+    def remove_icon(self, icon):
+        self.icons.remove(icon)
+        for i, icon in enumerate(self.icons):
+            icon.pos = [self.pos[0] + 3, self.pos[1] + 10 + 30*i]
+
+    def update(self, dt):
+        self.rect.topleft = (self.pos[0], self.pos[1])
+
+class MoveIcon(pygame.sprite.Sprite):
+    def __init__(self, typ):
+        pygame.sprite.Sprite.__init__(self)
+        self.pos = [0, 0]
+        self.image = pygame.image.load("image/move-" + typ + ".png").convert_alpha()
+        self.typ = typ
+        self.rect = self.image.get_rect()
+        self.is_drag = False
+        self.off_set_x = 0
+        self.off_set_y = 0
+        self.original_pos = [0, 0]
+        self.in_move_bar = True
         self.in_timeline = False
         self.con = pygame.sprite.RenderUpdates(self)
 
@@ -336,15 +395,13 @@ class MoveIcon(pygame.sprite.Sprite):
         self.set_rect_pos()
 
 
-
-class IconBar(pygame.sprite.Sprite):
+class MoveBar(pygame.sprite.Sprite):
     def __init__(self, pos):
         pygame.sprite.Sprite.__init__(self)
         self.pos = list(pos)
-        self.image = pygame.image.load("image/icon_bar.png").convert_alpha()
+        self.image = pygame.image.load("image/move_bar.png").convert_alpha()
         self.rect = self.image.get_rect()
         self.con = pygame.sprite.RenderUpdates(self)
-
         self.icons = []
 
     def add_icon(self, icon):
@@ -365,6 +422,7 @@ class IconBar(pygame.sprite.Sprite):
 
     # TODO: change color when mouse drag is on
     # TODO: hide and reveal when mouse approach
+
 
 class CharacterTimeline(pygame.sprite.Sprite):
     def __init__(self, pos):
@@ -387,19 +445,82 @@ class CharacterTimeline(pygame.sprite.Sprite):
     def reset(self):
         pass
 
-
-
-
-# TODO: start, pause buttons
-# class Control_bar(pygame.sprite.Sprite):
-
-class Timeline_pointer(pygame.sprite.Sprite):
-    def __init__(self, character, timeline, pos):
-        self.original_pos = (pos[0]-8, pos[1]-16)
+class WinLayer(pygame.sprite.Sprite):
+    def __init__(self, pos, scene):
         pygame.sprite.Sprite.__init__(self)
-        self.pos = list(self.original_pos)
+        self.pos = list(pos)
+        self.scene = scene
+
+        image_rating = pygame.image.load('image/'+str(self.scene.rating)+'star.png').convert_alpha()
+        image_win_layer = pygame.image.load('image/win_layer.png').convert_alpha()
+        self.image = image_win_layer.copy()
+        self.image.blit(image_rating, (45, 55))
+        self.rect = self.image.get_rect()
+        self.con = pygame.sprite.RenderUpdates(self)
+
+    def update(self, dt):
+        points = 1000
+        if points > 900:
+            self.scene.rating = 3
+        else:
+            self.scene.rating = points//300
+        image_rating = pygame.image.load('image/'+str(self.scene.rating)+'star.png').convert_alpha()
+        image_win_layer = pygame.image.load('image/win_layer.png').convert_alpha()
+        self.image = image_win_layer.copy()
+        self.image.blit(image_rating, (45, 55))
+        # self.rect = self.image.get_rect()
+        self.rect.topleft = (self.pos[0], self.pos[1])
+
+
+# TODO: start, pause buttons, fast forward
+class ControlBar(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        pygame.sprite.Sprite.__init__(self)
+        self.pos = list(pos)
+        # self.image = pygame.image.load("image/control_bar.png").convert_alpha()
+        # self.rect = self.image.get_rect()
+        self.con = pygame.sprite.RenderUpdates(self)
+
+class StartIcon(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        pygame.sprite.Sprite.__init__(self)
+        self.pos = list(pos)
+        # self.image = pygame.image.load("image/start_icon.png").convert_alpha()
+        # self.rect = self.image.get_rect()
+        self.con = pygame.sprite.RenderUpdates(self)
+
+class StopIcon(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        pygame.sprite.Sprite.__init__(self)
+        self.pos = list(pos)
+        # self.image = pygame.image.load("image/stop_icon.png").convert_alpha()
+        # self.rect = self.image.get_rect()
+        self.con = pygame.sprite.RenderUpdates(self)
+
+class FastForwardIcon(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        pygame.sprite.Sprite.__init__(self)
+        self.pos = list(pos)
+        # self.image = pygame.image.load("image/fast_forward_icon.png").convert_alpha()
+        # self.rect = self.image.get_rect()
+        self.con = pygame.sprite.RenderUpdates(self)
+
+class ResetIcon(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        pygame.sprite.Sprite.__init__(self)
+        self.pos = list(pos)
+        # self.image = pygame.image.load("image/reset_icon.png").convert_alpha()
+        # self.rect = self.image.get_rect()
+        self.con = pygame.sprite.RenderUpdates(self)
+
+class TimelinePointer(pygame.sprite.Sprite):
+    def __init__(self, character, timeline, pos):
+        pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load("image/timeline_pointer.png").convert_alpha()
         self.rect = self.image.get_rect()
+        self.original_pos = (pos[0]-self.rect.width/2, pos[1]-self.rect.height)
+        self.pos = list(self.original_pos)
+
         self.con = pygame.sprite.RenderUpdates(self)
         self.character = character
         self.timeline = timeline
@@ -410,13 +531,10 @@ class Timeline_pointer(pygame.sprite.Sprite):
         # TODO: modifiable time line scale
         if self.running:
             self.pos[0] += 100 * dt
-        if self.pos[0] > 300-8:
-            self.pos[0] = 300-8
+        if self.pos[0] > self.timeline.pos[0] + self.timeline.rect.width - self.rect.width/2:
+            self.pos[0] = self.timeline.pos[0] + self.timeline.rect.width - self.rect.width/2
         self.rect.topleft = (self.pos[0], self.pos[1])
-        #before, after = self.pos[0],self.pos[0] + 100 * dt
         for move in self.timeline.moves:
-            # sometime not work
-            # maybe because search
             if self.timeline.moves[move] <= self.pos[0] and move not in self.past_move:
                 print move.typ
                 if move.typ == 'up':
@@ -436,7 +554,6 @@ class Timeline_pointer(pygame.sprite.Sprite):
         self.running = False
         self.pos = list(self.original_pos)
         self.past_move = set()
-
 
 
 class Maze(pygame.sprite.Sprite):
@@ -477,7 +594,7 @@ class Maze(pygame.sprite.Sprite):
                             pass
                         else:
                             new_move_icon = MoveIcon(line[:-1])
-                            self.game.icon_bar.add_icon(new_move_icon)
+                            self.game.move_bar.add_icon(new_move_icon)
                             self.game.icons.append(new_move_icon)
                             self.game.mouse_interactable.append(new_move_icon)
 
@@ -499,7 +616,6 @@ class Exit(pygame.sprite.Sprite):
 
     def update(self, dt):
         self.rect.topleft = (self.pos[0], self.pos[1])
-
 
 
 class Brick(pygame.sprite.Sprite):
@@ -547,7 +663,6 @@ class Character(pygame.sprite.Sprite):
 
     def update(self, maze, dt):
         if self.out:
-            # TODO text layer win message
             return
         if self.running:
             self.update_move(maze, dt)
@@ -586,7 +701,6 @@ class Character(pygame.sprite.Sprite):
     def stop_down(self):  self.moving_down = False
 
     def move_single_axis(self, dx, dy, maze):
-        #self.rect.move(dx, dy)
         self.rect.x += dx
         self.rect.y += dy
         for ob in maze.maze:
@@ -596,18 +710,12 @@ class Character(pygame.sprite.Sprite):
                     print 'out'
                 else:
                     if dx > 0:
-                        #self.pos[0] = ob.rect.left - self.rect.width
                         self.rect.right = ob.rect.left
                     elif dx < 0:
-                        #self.pos[0] = ob.rect.right
-
                         self.rect.left = ob.rect.right
                     if dy > 0:
-                        #self.pos[1] = ob.rect.top - self.rect.height
-
                         self.rect.bottom = ob.rect.top
                     elif dy < 0:
-                        #self.pos[1] = ob.rect.bottom
                         self.rect.top = ob.rect.bottom
 
 
@@ -616,13 +724,13 @@ class Character(pygame.sprite.Sprite):
     def update_move(self, maze, dt):
 
         if self.moving_left:
-            self.move(maze, -120*dt, 0)
+            self.move(maze, -self.speed*dt, 0)
         if self.moving_right:
-            self.move(maze, 120*dt, 0)
+            self.move(maze, self.speed*dt, 0)
         if self.moving_up:
-            self.move(maze, 0, -120*dt)
+            self.move(maze, 0, -self.speed*dt)
         if self.moving_down:
-            self.move(maze, 0, 120*dt)
+            self.move(maze, 0, self.speed*dt)
 
     def move(self, maze, dx, dy):
         if dx:
@@ -663,6 +771,7 @@ class Character(pygame.sprite.Sprite):
         self.moving_down = False
         self.out = False
         self.running = False
+
 
 class ReturnLayer(pygame.sprite.Sprite):
     def __init__(self, pos):
