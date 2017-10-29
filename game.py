@@ -28,17 +28,23 @@ class Game(object):
         self.screen = screen
         self.restart = True
         self.timer = pygame.time.Clock()
+        self.read_save()
 
     def loop(self):
         running = True
         manager = SceneMananger(self.screen)
         while(True):
             #self.timer.tick(60)
-            print type(manager.scene)
+            # print type(manager.scene)
             if pygame.event.get(QUIT):
                 running = False
                 return
             running = manager.scene.loop()
+
+
+    def read_save(self):
+        pass
+
 
 
 class SceneMananger(object):
@@ -58,20 +64,39 @@ class TitleScene(object):
         super(TitleScene, self).__init__()
         self.screen = screen
         self.running = True
-        self.font = pygame.font.SysFont('Arial', 56)
+        self.clock = pygame.time.Clock()
+
+        self.font = pygame.font.SysFont('Arial', 40)
         self.bg = pygame.image.load('image/bg.png').convert_alpha()
+        self.stage1 = StageIcon(1, (20, 100), 1)
+        self.stage2 = StageIcon(2, (140, 100), 2)
+        self.stage3 = StageIcon(3, (260, 100), 3)
+        self.stages = [self.stage1, self.stage2, self.stage3]
+        self.mouse_interactable = self.stages
 
     def loop(self):
 
-        text1 = self.font.render('123', True, (255, 255, 255))
+        text1 = self.font.render('choose stage', True, (255, 255, 255))
         self.screen.blit(self.bg, (0, 0))
-        self.screen.blit(text1, (50, 50))
+        self.screen.blit(text1, (65, 30))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                self.on_mousedown(event)
             elif event.type == pygame.KEYDOWN:
                 self.on_keydown(event)
-        pygame.display.flip()
+
+
+        dt = self.clock.tick(const.FPS) / 1000.0
+        update_rects = []
+
+        for stage in self.stages:
+            stage.con.clear(self.screen, self.bg)
+            stage.con.update(dt)
+            update_rects += stage.con.draw(self.screen)
+
+        pygame.display.update(update_rects)
 
 
         return True
@@ -82,43 +107,60 @@ class TitleScene(object):
     def on_keydown(self, event):
         self.scene_manager.go_to(Scene(self.screen))
         self.running = False
+    def on_mousedown(self, event):
 
+        for item in self.mouse_interactable:
+            if item.rect.collidepoint(event.pos) and isinstance(item, StageIcon):
+                self.running = False
+                self.scene_manager.go_to(Scene(self.screen, item.stage_id))
 
+class StageIcon(pygame.sprite.Sprite):
+    def __init__(self, stage_id, pos, rating):
+        pygame.sprite.Sprite.__init__(self)
+        self.stage_id = stage_id
+        self.pos = list(pos)
+        image_rating = pygame.image.load('image/'+str(rating)+'star.png').convert_alpha()
+        image_stage = pygame.image.load('image/stage'+str(stage_id)+'.png').convert_alpha()
+        self.image = image_stage.copy()
+        self.image.blit(image_rating, (0, 35))
+        self.rect = self.image.get_rect()
+        self.con = pygame.sprite.RenderUpdates(self)
+
+    def update(self, dt):
+        self.rect.topleft = (self.pos[0], self.pos[1])
 
 
 class Scene(object):
 
-    def __init__(self, screen):
-        # self.window = window
-        self.real_screen = screen
+    def __init__(self, screen, stage_id):
+        self.screen = screen
         self.running = True
         initial_pos = (const.REAL_WIDTH / 2 - 50, 40)
         self.clock = pygame.time.Clock()
         self.icons = []
-        # self.scene_manager = scene_manager
         self.mouse_interactable = []
-
-        self.icon_bar = Icon_bar((10, 20))
-        self.character_timeline = Character_timeline((50, 300))
+        self.bg = pygame.image.load('image/bg.png').convert_alpha()
+        #self.stage_id = stage_id
+        self.icon_bar = IconBar((10, 50))
+        self.character_timeline = CharacterTimeline((50, 320))
 
 
         self.character = Character(initial_pos, self)
-        self.maze = Maze((80, 30), self, 1)
-        self.return_layer = Return_layer((40, 40))
+        self.maze = Maze((80, 30), self, stage_id)
+        self.return_layer = ReturnLayer((10, 20))
 
         self.mouse_interactable.append(self.return_layer)
 
 
-        self.timeline_pointer = Timeline_pointer(self.character, self.character_timeline)
+        self.timeline_pointer = Timeline_pointer(self.character, self.character_timeline, self.character_timeline.pos)
 
 
-        self.screen = pygame.surface.Surface((const.REAL_WIDTH, const.REAL_HEIGHT))
+        #self.screen = pygame.surface.Surface((const.REAL_WIDTH, const.REAL_HEIGHT))
 
 
 
 
     def loop(self):
-        self.bg = pygame.image.load('image/bg.png').convert_alpha()
         self.screen.blit(self.bg, (0, 0))
 
         while self.running:
@@ -183,7 +225,7 @@ class Scene(object):
 
             # scaling and updating
             #scaled_update_rects = [pygame.Rect(2*r.left - 4, 2*r.top - 4, 2*r.width + 8, 2*r.height + 8) for r in update_rects]
-            pygame.transform.scale(self.screen, (const.WIDTH, const.HEIGHT), self.real_screen)
+            #pygame.transform.scale(self.screen, (const.WIDTH, const.HEIGHT), self.screen)
             #pygame.display.update(scaled_update_rects)
             pygame.display.update(update_rects)
 
@@ -224,13 +266,14 @@ class Scene(object):
 
     def on_mouseup(self, event):
         for item in self.mouse_interactable:
-            if isinstance(item, Move_icon):
+            if isinstance(item, MoveIcon):
                 if item.is_drag == True:
                     if item.rect.colliderect(self.character_timeline):
                         item.is_drag = False
                         item.off_set_x = 0
                         item.off_set_y = 0
-                        item.pos[1] = 300 # y pos of timeline
+                        item.pos[1] = self.character_timeline.pos[1] \
+                        + self.character_timeline.rect.height/2 - item.rect.height/2 # y pos of timeline
                         if item in self.icon_bar.icons:
                             self.icon_bar.remove_icon(item)
                         elif item in self.character_timeline.moves:
@@ -254,18 +297,17 @@ class Scene(object):
 
     def on_mousedown(self, event):
         for item in self.mouse_interactable:
-            if item.rect.collidepoint(event.pos) and isinstance(item, Move_icon):
+            if item.rect.collidepoint(event.pos) and isinstance(item, MoveIcon):
                 item.is_drag = True
                 item.original_pos= item.pos[0], item.pos[1]
                 item.off_set_x = item.rect.x - event.pos[0]
                 item.off_set_y = item.rect.y - event.pos[1]
                 break
-            elif item.rect.collidepoint(event.pos) and isinstance(item, Return_layer):
+            elif item.rect.collidepoint(event.pos) and isinstance(item, ReturnLayer):
                 self.running = False
-                self.scene_manager.go_to(TitleScene(self.real_screen))
-                print 1
+                self.scene_manager.go_to(TitleScene(self.screen))
 
-class Move_icon(pygame.sprite.Sprite):
+class MoveIcon(pygame.sprite.Sprite):
     def __init__(self, typ):
         pygame.sprite.Sprite.__init__(self)
         self.pos = [0, 0]
@@ -295,7 +337,7 @@ class Move_icon(pygame.sprite.Sprite):
 
 
 
-class Icon_bar(pygame.sprite.Sprite):
+class IconBar(pygame.sprite.Sprite):
     def __init__(self, pos):
         pygame.sprite.Sprite.__init__(self)
         self.pos = list(pos)
@@ -303,18 +345,18 @@ class Icon_bar(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.con = pygame.sprite.RenderUpdates(self)
 
-        self.icons = set()
+        self.icons = []
 
     def add_icon(self, icon):
-        self.icons.add(icon)
+        self.icons.append(icon)
         for i, icon in enumerate(self.icons):
-            icon.pos = [13, 30 + 30*i]
+            icon.pos = [self.pos[0] + 3, self.pos[1] + 10 + 30*i]
         #print self.icons
 
     def remove_icon(self, icon):
         self.icons.remove(icon)
         for i, icon in enumerate(self.icons):
-            icon.pos = [13, 30 + 30*i]
+            icon.pos = [self.pos[0] + 3, self.pos[1] + 10 + 30*i]
 
     def update(self, dt):
         self.rect.topleft = (self.pos[0], self.pos[1])
@@ -324,7 +366,7 @@ class Icon_bar(pygame.sprite.Sprite):
     # TODO: change color when mouse drag is on
     # TODO: hide and reveal when mouse approach
 
-class Character_timeline(pygame.sprite.Sprite):
+class CharacterTimeline(pygame.sprite.Sprite):
     def __init__(self, pos):
         pygame.sprite.Sprite.__init__(self)
         self.pos = list(pos)
@@ -352,8 +394,8 @@ class Character_timeline(pygame.sprite.Sprite):
 # class Control_bar(pygame.sprite.Sprite):
 
 class Timeline_pointer(pygame.sprite.Sprite):
-    def __init__(self, character, timeline):
-        self.original_pos = (50-8, 300-16)
+    def __init__(self, character, timeline, pos):
+        self.original_pos = (pos[0]-8, pos[1]-16)
         pygame.sprite.Sprite.__init__(self)
         self.pos = list(self.original_pos)
         self.image = pygame.image.load("image/timeline_pointer.png").convert_alpha()
@@ -362,17 +404,21 @@ class Timeline_pointer(pygame.sprite.Sprite):
         self.character = character
         self.timeline = timeline
         self.running = False
+        self.past_move = set()
 
     def update(self, dt):
+        # TODO: modifiable time line scale
         if self.running:
             self.pos[0] += 100 * dt
         if self.pos[0] > 300-8:
             self.pos[0] = 300-8
         self.rect.topleft = (self.pos[0], self.pos[1])
-        before, after = self.pos[0],self.pos[0] + 100 * dt
+        #before, after = self.pos[0],self.pos[0] + 100 * dt
         for move in self.timeline.moves:
-            if before <= self.timeline.moves[move]\
-            and self.timeline.moves[move] <= after:
+            # sometime not work
+            # maybe because search
+            if self.timeline.moves[move] <= self.pos[0] and move not in self.past_move:
+                print move.typ
                 if move.typ == 'up':
                     self.character.move_up()
                 elif move.typ == 'left':
@@ -381,6 +427,7 @@ class Timeline_pointer(pygame.sprite.Sprite):
                     self.character.move_down()
                 elif move.typ == 'right':
                     self.character.move_right()
+                self.past_move.add(move)
 
     def toggle_pause(self):
         self.running = not self.running
@@ -388,6 +435,7 @@ class Timeline_pointer(pygame.sprite.Sprite):
     def reset(self):
         self.running = False
         self.pos = list(self.original_pos)
+        self.past_move = set()
 
 
 
@@ -415,28 +463,20 @@ class Maze(pygame.sprite.Sprite):
                             new_ob = Brick((x, y), False)
                             self.maze.append(new_ob)
                         elif c == 'p' or c == 'P':
-                            self.game.character.set_origanal_pos((x+5, y))
+                            self.game.character.set_origanal_pos((x, y))
                         elif c == 'e' or c == 'E':
                             new_ob = Exit((x, y))
                             self.exit_index.add(len(self.maze))
                             self.maze.append(new_ob)
-
-                        if j == len(line) - 3 and i == 15:
-                            y -= 10
-                        elif j == 0 and i == 15:
-                            y += 10
-                        if j == len(line) - 1:
-                            x += 10
-                        elif j != 0:
-                            x += 15
+                        x += 15
                     x = pos[0]
                     y += 15
                 elif i <= 25:
                     if line:
-                        if line[0] == '#':
+                        if line[0] == '#' or line[:-1] == '':
                             pass
                         else:
-                            new_move_icon = Move_icon(line[:-1])
+                            new_move_icon = MoveIcon(line[:-1])
                             self.game.icon_bar.add_icon(new_move_icon)
                             self.game.icons.append(new_move_icon)
                             self.game.mouse_interactable.append(new_move_icon)
@@ -467,7 +507,7 @@ class Brick(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.pos = list(pos)
         if v:
-            self.image = pygame.image.load("image/brick_v.png").convert_alpha()
+            self.image = pygame.image.load("image/brick.png").convert_alpha()
         else:
             self.image = pygame.image.load("image/brick.png").convert_alpha()
 
@@ -486,11 +526,12 @@ class Character(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.game = game
         self.original_pos = pos
-        self.pos = list(pos)
+        #self.pos = list(pos)
         self.image = pygame.image.load("image/character.png").convert_alpha()
         self.con = pygame.sprite.RenderUpdates(self)
         self.vel = [0, 0]
         self.rect = self.image.get_rect()
+        self.rect.topleft = list(self.original_pos)
         self.moving_left = False
         self.moving_right = False
         self.moving_up = False
@@ -500,9 +541,9 @@ class Character(pygame.sprite.Sprite):
         self.running = False
 
 
-    def set_rect_pos(self):
+    #def set_rect_pos(self):
         # self.rect.topleft = (self.pos[0] - self.bb_general.x, self.pos[1] - self.bb_general.y)
-        self.rect.topleft = (self.pos[0], self.pos[1])
+        #self.rect.topleft = (self.pos[0], self.pos[1])
 
     def update(self, maze, dt):
         if self.out:
@@ -510,76 +551,98 @@ class Character(pygame.sprite.Sprite):
             return
         if self.running:
             self.update_move(maze, dt)
-            self.pos[0] += self.vel[0] * dt
-            self.pos[1] += self.vel[1] * dt
 
-        self.set_rect_pos()
 
-    def move_left(self):  self.moving_left = True
+
+    def move_left(self):
+        self.moving_left = True
+        self.moving_right = False
+        self.moving_up = False
+        self.moving_down = False
+
     def stop_left(self):  self.moving_left = False
-    def move_right(self): self.moving_right = True
+    def move_right(self):
+        self.moving_right = True
+        self.moving_left = False
+        self.moving_up = False
+        self.moving_down = False
+
+
     def stop_right(self): self.moving_right = False
-    def move_up(self):    self.moving_up = True
+    def move_up(self):
+        self.moving_up = True
+        self.moving_down = False
+        self.moving_left = False
+        self.moving_right = False
+
+
     def stop_up(self):    self.moving_up = False
-    def move_down(self):  self.moving_down = True
+    def move_down(self):
+        self.moving_right = False
+        self.moving_left = False
+        self.moving_down = True
+        self.moving_up = False
+
     def stop_down(self):  self.moving_down = False
+
+    def move_single_axis(self, dx, dy, maze):
+        #self.rect.move(dx, dy)
+        self.rect.x += dx
+        self.rect.y += dy
+        for ob in maze.maze:
+            if self.rect.colliderect(ob.rect):
+                if isinstance(ob, Exit):
+                    self.out = True
+                    print 'out'
+                else:
+                    if dx > 0:
+                        #self.pos[0] = ob.rect.left - self.rect.width
+                        self.rect.right = ob.rect.left
+                    elif dx < 0:
+                        #self.pos[0] = ob.rect.right
+
+                        self.rect.left = ob.rect.right
+                    if dy > 0:
+                        #self.pos[1] = ob.rect.top - self.rect.height
+
+                        self.rect.bottom = ob.rect.top
+                    elif dy < 0:
+                        #self.pos[1] = ob.rect.bottom
+                        self.rect.top = ob.rect.bottom
+
 
 
 
     def update_move(self, maze, dt):
 
         if self.moving_left:
-            self.vel[0] = -self.speed
-        elif self.moving_right:
-            self.vel[0] = self.speed
-        else:
-            self.vel[0] = 0
-
+            self.move(maze, -120*dt, 0)
+        if self.moving_right:
+            self.move(maze, 120*dt, 0)
         if self.moving_up:
-            self.vel[1] = -self.speed
-        elif self.moving_down:
-            self.vel[1] = self.speed
-        else:
-            self.vel[1] = 0
+            self.move(maze, 0, -120*dt)
+        if self.moving_down:
+            self.move(maze, 0, 120*dt)
 
+    def move(self, maze, dx, dy):
+        if dx:
+            self.move_single_axis(dx, 0, maze)
+        if dy:
+            self.move_single_axis(0, dy, maze)
 
-        self.update_direction()
-        new_rect = Rect((self.rect.left + dt*self.vel[0],\
-             self.rect.top + dt*self.vel[1]),\
-             (self.rect.width, self.rect.height))
-
-        coll = new_rect.collidelist(maze.maze)
-        if coll in maze.exit_index:
-            self.out = True
-            print 'out'
-        elif coll != -1:
-            self.pos = [self.pos[0] - self.vel[0]*dt, self.pos[1] - self.vel[1]*dt]
-            new_rect_ud = Rect((self.rect.left,\
-                 self.rect.top + dt*self.vel[1]),\
-                 (self.rect.width, self.rect.height))
-            new_rect_lr = Rect((self.rect.left + dt*self.vel[0],\
-                 self.rect.top),\
-                 (self.rect.width, self.rect.height))
-            coll_ud = new_rect_ud.collidelist(maze.maze)
-            coll_lr = new_rect_lr.collidelist(maze.maze)
-            if coll_ud != -1:
-                self.stop_up()
-                self.stop_down()
-            if coll_lr != -1:
-                self.stop_left()
-                self.stop_right()
-            if coll_lr == -1 and coll_ud == -1:
-                self.stop_up()
-                self.stop_down()
-                self.stop_left()
-                self.stop_right()
 
 
     def update_direction(self):
-        if self.vel[0] > 0:
-            self.direction = 'r'
-        elif self.vel[0] < 0:
-            self.direction = 'l'
+        self.direction = ''
+        if self.vel[1] > 0:
+            self.direction += 'd'
+        elif self.vel[1] < 0:
+            self.direction += 'u'
+        else:
+            if self.vel[0] > 0:
+                self.direction += 'r'
+            elif self.vel[0] < 0:
+                self.direction += 'l'
 
 
     def toggle_pause(self):
@@ -588,11 +651,11 @@ class Character(pygame.sprite.Sprite):
 
     def set_origanal_pos(self, pos):
         self.original_pos = pos
-        self.pos = list(pos)
+        self.rect.topleft = list(pos)
 
 
     def reset(self):
-        self.pos = list(self.original_pos)
+        self.rect.topleft = list(self.original_pos)
         self.vel = [0, 0]
         self.moving_left = False
         self.moving_right = False
@@ -601,7 +664,7 @@ class Character(pygame.sprite.Sprite):
         self.out = False
         self.running = False
 
-class Return_layer(pygame.sprite.Sprite):
+class ReturnLayer(pygame.sprite.Sprite):
     def __init__(self, pos):
         pygame.sprite.Sprite.__init__(self)
         self.pos = list(pos)
