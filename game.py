@@ -4,8 +4,12 @@ import sys
 import const
 
 
-# TODO rewrite frame update logic
+# TODO
+# add more tools and moves
+# add more maze obstacles
+# rewrite frame update logic
 # merge different icons
+
 
 
 class GameWindow(object):
@@ -72,6 +76,8 @@ class TitleScene(object):
         self.save_exist = True
         self.warning = False
         self.yes = False
+        self.click_down_no = False
+        self.click_down_yes = False
         # TODO:
         # add some fancy anime on title scene
         # self.bounceing_ball =
@@ -99,11 +105,24 @@ class TitleScene(object):
             elif event.type == pygame.KEYDOWN:
                 self.on_keydown(event)
 
-
+        mouse_pos = pygame.mouse.get_pos()
         dt = self.clock.tick(const.FPS) / 1000.0
         update_rects = []
 
         self.new_game_button.con.clear(self.screen, self.bg)
+        if self.new_game_button.rect.collidepoint(mouse_pos):
+            self.new_game_button.add_bg(True)
+        else:
+            self.new_game_button.add_bg(False)
+        if self.save_exist:
+            if self.continue_button.rect.collidepoint(mouse_pos):
+                self.continue_button.add_bg(True)
+            else:
+                self.continue_button.add_bg(False)
+        if self.exit_button.rect.collidepoint(mouse_pos):
+            self.exit_button.add_bg(True)
+        else:
+            self.exit_button.add_bg(False)
         # TODO:
         # test if the former two if can be removed
         if self.save_exist:
@@ -125,11 +144,12 @@ class TitleScene(object):
 
         return True
 
-    def display_warning(self, text1, text2):
-        self.title_text_layer.update_text(text1, text2)
+    def display_warning(self, text1, text2, bg_id):
+        if text1:
+            self.title_text_layer.update_text(text1, text2)
+        self.title_text_layer.update_bg(bg_id)
         self.title_text_layer.con.clear(self.screen, self.bg)
         dt = self.clock.tick(const.FPS) / 1000.0
-
         self.title_text_layer.con.update(dt)
         update_rects = self.title_text_layer.con.draw(self.screen)
         pygame.display.update(update_rects)
@@ -139,22 +159,51 @@ class TitleScene(object):
         # for testing
         self.scene_manager.go_to(StageChooseScene(self.screen))
         self.running = False
+
+    def on_mouseup(self, event):
+        if not self.warning:
+            return
+        if self.title_text_layer.rect.collidepoint(event.pos):
+            if((event.pos[0] >= self.title_text_layer.rect.left + 35)
+                and (event.pos[0] <= self.title_text_layer.rect.left + 75)
+                and (event.pos[1] >= self.title_text_layer.rect.top + 100)
+                and (event.pos[1] <= self.title_text_layer.rect.top + 120)
+                and self.click_down_yes):
+                self.click_down_yes = False
+                self.yes = True
+                self.warning = False
+            elif((event.pos[0] >= self.title_text_layer.rect.left + 120)
+                and (event.pos[0] <= self.title_text_layer.rect.left + 160)
+                and (event.pos[1] >= self.title_text_layer.rect.top + 100)
+                and (event.pos[1] <= self.title_text_layer.rect.top + 120)
+                and self.click_down_no):
+                self.click_down_no = False
+                self.yes = False
+                self.warning = False
+            else:
+                self.click_down_no = False
+                self.click_down_yes = False
+        else:
+            self.click_down_no = False
+            self.click_down_yes = False
+
     def on_mousedown(self, event):
         if self.warning:
             if self.title_text_layer.rect.collidepoint(event.pos):
-                print event.pos
                 if((event.pos[0] >= self.title_text_layer.rect.left + 35)
                     and (event.pos[0] <= self.title_text_layer.rect.left + 75)
                     and (event.pos[1] >= self.title_text_layer.rect.top + 100)
                     and (event.pos[1] <= self.title_text_layer.rect.top + 120)):
-                    self.yes = True
-                    self.warning = False
+                    # click down the button, change display
+                    self.display_warning('','',1)
+                    self.click_down_yes = True
+
                 elif((event.pos[0] >= self.title_text_layer.rect.left + 120)
                     and (event.pos[0] <= self.title_text_layer.rect.left + 160)
                     and (event.pos[1] >= self.title_text_layer.rect.top + 100)
                     and (event.pos[1] <= self.title_text_layer.rect.top + 120)):
-                    self.yes = False
-                    self.warning = False
+                    self.display_warning('','',2)
+                    self.click_down_no = True
         else:
             for item in self.mouse_interactable:
                 if item.rect.collidepoint(event.pos):
@@ -163,13 +212,16 @@ class TitleScene(object):
                         if self.save_exist:
                             self.warning = True
                             while(self.warning):
-                                self.display_warning('Will remove existing save', 'continue?')
+                                if not self.click_down_no and not self.click_down_yes:
+                                        self.display_warning('Will remove existing save', 'continue?', 0)
                                 for event in pygame.event.get():
                                     if event.type == pygame.QUIT:
                                         sys.exit()
                                     elif event.type == pygame.MOUSEBUTTONDOWN:
                                         self.on_mousedown(event)
-                                self.waring = False
+                                    elif event.type == pygame.MOUSEBUTTONUP:
+                                        self.on_mouseup(event)
+                            self.warning = False
                             if self.yes:
                                 f = open('save/save', 'w')
                                 for _ in range(3):
@@ -189,12 +241,15 @@ class TitleScene(object):
                     elif item.text == 'Exit':
                         self.warning = True
                         while(self.warning):
-                            self.display_warning('Are you sure to exit?', '')
+                            if not self.click_down_no and not self.click_down_yes:
+                                self.display_warning('Are you sure to exit?', '', 0)
                             for event in pygame.event.get():
                                 if event.type == pygame.QUIT:
                                     sys.exit()
                                 elif event.type == pygame.MOUSEBUTTONDOWN:
                                     self.on_mousedown(event)
+                                elif event.type == pygame.MOUSEBUTTONUP:
+                                    self.on_mouseup(event)
                         if self.yes:
                             sys.exit()
                         self.yes = False
@@ -205,14 +260,22 @@ class TitleButton(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.pos = list(pos)
         self.font = pygame.font.SysFont('Arial', 30)
-        self.bg = pygame.image.load('image/title_button_bg.png').convert_alpha()
+        # self.bg = pygame.image.load('image/title_button_bg.png').convert_alpha()
         self.text = text
-        self.image = self.font.render(text, True, (255, 255, 255), (177, 177, 177))
+        self.image = self.font.render(text, True, (255, 255, 255))
+        #self.image = self.font.render(text, True, (255, 255, 255), (177, 177, 177))
+
         self.rect = self.image.get_rect()
         self.con = pygame.sprite.RenderUpdates(self)
 
     def update(self, dt):
         self.rect.topleft = (self.pos[0], self.pos[1])
+    def add_bg(self, is_bg):
+        if is_bg:
+            self.image = self.font.render(self.text, True, (255, 255, 255), (177, 177, 177))
+        else:
+            self.image = self.font.render(self.text, True, (255, 255, 255))
+
 
 
 # TODO:
@@ -223,23 +286,30 @@ class TitleTextLayer(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.pos = list(pos)
         self.font = pygame.font.SysFont('Arial', 20)
-        self.image_bg = pygame.image.load("image/title_text_layer.png").convert_alpha()
-        image_text1 = self.font.render(text1, True, (255, 255, 255))
-        image_text2 = self.font.render(text2, True, (255, 255, 255))
+        self.image_bg = pygame.image.load("image/title_text_layer0.png").convert_alpha()
+        self.image_text1 = self.font.render(text1, True, (255, 255, 255))
+        self.image_text2 = self.font.render(text2, True, (255, 255, 255))
 
         self.image = self.image_bg.copy()
-        self.image.blit(image_text1, (100-image_text1.get_rect().width/2, 30))
-        self.image.blit(image_text2, (100-image_text2.get_rect().width/2, 50))
+        self.image.blit(self.image_text1, (100-self.image_text1.get_rect().width/2, 30))
+        self.image.blit(self.image_text2, (100-self.image_text2.get_rect().width/2, 50))
 
         self.con = pygame.sprite.RenderUpdates(self)
         self.rect = self.image.get_rect()
     def update_text(self, text1, text2):
-        image_text1 = self.font.render(text1, True, (255, 255, 255))
-        image_text2 = self.font.render(text2, True, (255, 255, 255))
+        self.image_text1 = self.font.render(text1, True, (255, 255, 255))
+        self.image_text2 = self.font.render(text2, True, (255, 255, 255))
 
         self.image = self.image_bg.copy()
-        self.image.blit(image_text1, (100-image_text1.get_rect().width/2, 30))
-        self.image.blit(image_text2, (100-image_text2.get_rect().width/2, 50))
+        self.image.blit(self.image_text1, (100-self.image_text1.get_rect().width/2, 30))
+        self.image.blit(self.image_text2, (100-self.image_text2.get_rect().width/2, 50))
+        self.rect = self.image.get_rect()
+    def update_bg(self, bg_id):
+        self.image_bg = pygame.image.load('image/title_text_layer'+str(bg_id)+'.png').convert_alpha()
+
+        self.image = self.image_bg.copy()
+        self.image.blit(self.image_text1, (100-self.image_text1.get_rect().width/2, 30))
+        self.image.blit(self.image_text2, (100-self.image_text2.get_rect().width/2, 50))
         self.rect = self.image.get_rect()
 
     def update(self, dt):
@@ -263,7 +333,7 @@ class StageChooseScene(object):
         self.stage2 = StageIcon(2, (140, 100), self.save[1])
         self.stage3 = StageIcon(3, (260, 100), self.save[2])
         self.stages = [self.stage1, self.stage2, self.stage3]
-        self.mouse_interactable = self.stages
+        self.mouse_interactable = self.stages[:]
         self.mouse_interactable.append(self.back_icon)
 
     def loop(self):
@@ -281,9 +351,17 @@ class StageChooseScene(object):
 
         dt = self.clock.tick(const.FPS) / 1000.0
         update_rects = []
-
+        mouse_pos = pygame.mouse.get_pos()
+        self.back_icon.con.clear(self.screen, self.bg)
+        self.back_icon.con.update(dt)
+        update_rects += self.back_icon.con.draw(self.screen)
         for stage in self.stages:
             stage.con.clear(self.screen, self.bg)
+            if stage.rect.collidepoint(mouse_pos):
+                stage.point_to(True)
+            else:
+                stage.point_to(False)
+
             stage.con.update(dt)
             update_rects += stage.con.draw(self.screen)
 
@@ -317,12 +395,25 @@ class StageIcon(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.stage_id = stage_id
         self.pos = list(pos)
-        image_rating = pygame.image.load('image/'+str(rating)+'star.png').convert_alpha()
-        image_stage = pygame.image.load('image/stage'+str(stage_id)+'.png').convert_alpha()
+        self.rating = rating
+        image_rating = pygame.image.load('image/'+str(self.rating)+'star.png').convert_alpha()
+        image_stage = pygame.image.load('image/stage'+str(self.stage_id)+'.png').convert_alpha()
         self.image = image_stage.copy()
         self.image.blit(image_rating, (0, 35))
         self.rect = self.image.get_rect()
         self.con = pygame.sprite.RenderUpdates(self)
+
+    def point_to(self, is_pt):
+        if is_pt:
+            image_rating = pygame.image.load('image/'+str(self.rating)+'star.png').convert_alpha()
+            image_stage = pygame.image.load('image/stage'+str(self.stage_id)+'p.png').convert_alpha()
+            self.image = image_stage.copy()
+            self.image.blit(image_rating, (0, 35))
+        else:
+            image_rating = pygame.image.load('image/'+str(self.rating)+'star.png').convert_alpha()
+            image_stage = pygame.image.load('image/stage'+str(self.stage_id)+'.png').convert_alpha()
+            self.image = image_stage.copy()
+            self.image.blit(image_rating, (0, 35))
 
     def update(self, dt):
         self.rect.topleft = (self.pos[0], self.pos[1])
