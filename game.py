@@ -16,7 +16,7 @@ class GameWindow(object):
 
     def __init__(self, fullscreen=False):
         pygame.display.set_caption('SAWO')
-        self.screen = pygame.display.set_mode((const.WIDTH, const.HEIGHT))
+        self.screen = pygame.display.set_mode((const.WIDTH*const.SCALE, const.HEIGHT*const.SCALE))
         self.game()
 
     def game(self):
@@ -68,10 +68,12 @@ class TitleScene(object):
         self.running = True
         self.clock = pygame.time.Clock()
         self.bg = pygame.image.load('image/bg.png').convert_alpha()
+        w,h = self.bg.get_size()
+        self.bg = pygame.transform.scale(self.bg, (int(w*const.SCALE), int(h*const.SCALE)))
         self.new_game_button = TitleButton('New Game', (0, 0))
         self.continue_button = TitleButton('Continue', (0, 0))
         self.exit_button = TitleButton('Exit', (0, 0))
-        self.title_text_layer = TitleTextLayer((92, 100), '123')
+        self.title_text_layer = TitleTextLayer((92*const.WSCALE, 100*const.HSCALE), '')
         self.mouse_interactable = [self.new_game_button, self.continue_button, self.exit_button]
         self.save_exist = True
         self.warning = False
@@ -90,12 +92,12 @@ class TitleScene(object):
             self.save_exist = False
 
         if self.save_exist:
-            self.new_game_button.pos = [240, 270]
-            self.continue_button.pos = [240, 300]
-            self.exit_button.pos = [240, 330]
+            self.new_game_button.pos = [240*const.WSCALE, 270*const.HSCALE]
+            self.continue_button.pos = [240*const.WSCALE, 300*const.HSCALE]
+            self.exit_button.pos = [240*const.WSCALE, 330*const.HSCALE]
         else:
-            self.new_game_button.pos = [240, 270]
-            self.exit_button.pos = [240, 300]
+            self.new_game_button.pos = [240*const.WSCALE, 270*const.HSCALE]
+            self.exit_button.pos = [240*const.WSCALE, 300*const.HSCALE]
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -164,18 +166,18 @@ class TitleScene(object):
         if not self.warning:
             return
         if self.title_text_layer.rect.collidepoint(event.pos):
-            if((event.pos[0] >= self.title_text_layer.rect.left + 35)
-                and (event.pos[0] <= self.title_text_layer.rect.left + 75)
-                and (event.pos[1] >= self.title_text_layer.rect.top + 100)
-                and (event.pos[1] <= self.title_text_layer.rect.top + 120)
+            if((event.pos[0] >= self.title_text_layer.rect.left + 35*const.SCALE)
+                and (event.pos[0] <= self.title_text_layer.rect.left + 75*const.SCALE)
+                and (event.pos[1] >= self.title_text_layer.rect.top + 100*const.SCALE)
+                and (event.pos[1] <= self.title_text_layer.rect.top + 120*const.SCALE)
                 and self.click_down_yes):
                 self.click_down_yes = False
                 self.yes = True
                 self.warning = False
-            elif((event.pos[0] >= self.title_text_layer.rect.left + 120)
-                and (event.pos[0] <= self.title_text_layer.rect.left + 160)
-                and (event.pos[1] >= self.title_text_layer.rect.top + 100)
-                and (event.pos[1] <= self.title_text_layer.rect.top + 120)
+            elif((event.pos[0] >= self.title_text_layer.rect.left + 120*const.SCALE)
+                and (event.pos[0] <= self.title_text_layer.rect.left + 160*const.SCALE)
+                and (event.pos[1] >= self.title_text_layer.rect.top + 100*const.SCALE)
+                and (event.pos[1] <= self.title_text_layer.rect.top + 120*const.SCALE)
                 and self.click_down_no):
                 self.click_down_no = False
                 self.yes = False
@@ -190,18 +192,18 @@ class TitleScene(object):
     def on_mousedown(self, event):
         if self.warning:
             if self.title_text_layer.rect.collidepoint(event.pos):
-                if((event.pos[0] >= self.title_text_layer.rect.left + 35)
-                    and (event.pos[0] <= self.title_text_layer.rect.left + 75)
-                    and (event.pos[1] >= self.title_text_layer.rect.top + 100)
-                    and (event.pos[1] <= self.title_text_layer.rect.top + 120)):
+                if((event.pos[0] >= self.title_text_layer.rect.left + 35*const.SCALE)
+                    and (event.pos[0] <= self.title_text_layer.rect.left + 75*const.SCALE)
+                    and (event.pos[1] >= self.title_text_layer.rect.top + 100*const.SCALE)
+                    and (event.pos[1] <= self.title_text_layer.rect.top + 120*const.SCALE)):
                     # click down the button, change display
                     self.display_warning('','',1)
                     self.click_down_yes = True
 
-                elif((event.pos[0] >= self.title_text_layer.rect.left + 120)
-                    and (event.pos[0] <= self.title_text_layer.rect.left + 160)
-                    and (event.pos[1] >= self.title_text_layer.rect.top + 100)
-                    and (event.pos[1] <= self.title_text_layer.rect.top + 120)):
+                elif((event.pos[0] >= self.title_text_layer.rect.left + 120*const.SCALE)
+                    and (event.pos[0] <= self.title_text_layer.rect.left + 160*const.SCALE)
+                    and (event.pos[1] >= self.title_text_layer.rect.top + 100*const.SCALE)
+                    and (event.pos[1] <= self.title_text_layer.rect.top + 120*const.SCALE)):
                     self.display_warning('','',2)
                     self.click_down_no = True
         else:
@@ -264,7 +266,8 @@ class TitleButton(pygame.sprite.Sprite):
         self.text = text
         self.image = self.font.render(text, True, (255, 255, 255))
         #self.image = self.font.render(text, True, (255, 255, 255), (177, 177, 177))
-
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
         self.rect = self.image.get_rect()
         self.con = pygame.sprite.RenderUpdates(self)
 
@@ -291,9 +294,12 @@ class TitleTextLayer(pygame.sprite.Sprite):
         self.image_text2 = self.font.render(text2, True, (255, 255, 255))
 
         self.image = self.image_bg.copy()
-        self.image.blit(self.image_text1, (100-self.image_text1.get_rect().width/2, 30))
-        self.image.blit(self.image_text2, (100-self.image_text2.get_rect().width/2, 50))
-
+        self.image.blit(self.image_text1, ((100-self.image_text1.get_rect().width/2), 30))
+        self.image.blit(self.image_text2, ((100-self.image_text2.get_rect().width/2), 50))
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
         self.con = pygame.sprite.RenderUpdates(self)
         self.rect = self.image.get_rect()
     def update_text(self, text1, text2):
@@ -301,15 +307,19 @@ class TitleTextLayer(pygame.sprite.Sprite):
         self.image_text2 = self.font.render(text2, True, (255, 255, 255))
 
         self.image = self.image_bg.copy()
-        self.image.blit(self.image_text1, (100-self.image_text1.get_rect().width/2, 30))
-        self.image.blit(self.image_text2, (100-self.image_text2.get_rect().width/2, 50))
+        self.image.blit(self.image_text1, ((100-self.image_text1.get_rect().width/2), 30))
+        self.image.blit(self.image_text2, ((100-self.image_text2.get_rect().width/2), 50))
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
         self.rect = self.image.get_rect()
     def update_bg(self, bg_id):
         self.image_bg = pygame.image.load('image/title_text_layer'+str(bg_id)+'.png').convert_alpha()
 
         self.image = self.image_bg.copy()
-        self.image.blit(self.image_text1, (100-self.image_text1.get_rect().width/2, 30))
-        self.image.blit(self.image_text2, (100-self.image_text2.get_rect().width/2, 50))
+        self.image.blit(self.image_text1, ((100-self.image_text1.get_rect().width/2), 30))
+        self.image.blit(self.image_text2, ((100-self.image_text2.get_rect().width/2), 50))
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
         self.rect = self.image.get_rect()
 
     def update(self, dt):
@@ -328,10 +338,12 @@ class StageChooseScene(object):
         self.read_save()
         self.font = pygame.font.SysFont('Arial', 40)
         self.bg = pygame.image.load('image/bg.png').convert_alpha()
-        self.back_icon = BackIcon((10, 20))
-        self.stage1 = StageIcon(1, (20, 100), self.save[0])
-        self.stage2 = StageIcon(2, (140, 100), self.save[1])
-        self.stage3 = StageIcon(3, (260, 100), self.save[2])
+        w,h = self.bg.get_size()
+        self.bg = pygame.transform.scale(self.bg, (int(w*const.SCALE), int(h*const.SCALE)))
+        self.back_icon = BackIcon((10*const.WSCALE, 20*const.HSCALE))
+        self.stage1 = StageIcon(1, (20*const.WSCALE, 100*const.HSCALE), self.save[0])
+        self.stage2 = StageIcon(2, (140*const.WSCALE, 100*const.HSCALE), self.save[1])
+        self.stage3 = StageIcon(3, (260*const.WSCALE, 100*const.HSCALE), self.save[2])
         self.stages = [self.stage1, self.stage2, self.stage3]
         self.mouse_interactable = self.stages[:]
         self.mouse_interactable.append(self.back_icon)
@@ -340,7 +352,7 @@ class StageChooseScene(object):
 
         text1 = self.font.render('Choose Stage', True, (255, 255, 255))
         self.screen.blit(self.bg, (0, 0))
-        self.screen.blit(text1, (70, 20))
+        self.screen.blit(text1, (70*const.WSCALE, 20*const.HSCALE))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
@@ -400,6 +412,8 @@ class StageIcon(pygame.sprite.Sprite):
         image_stage = pygame.image.load('image/stage'+str(self.stage_id)+'.png').convert_alpha()
         self.image = image_stage.copy()
         self.image.blit(image_rating, (0, 35))
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
         self.rect = self.image.get_rect()
         self.con = pygame.sprite.RenderUpdates(self)
 
@@ -409,11 +423,15 @@ class StageIcon(pygame.sprite.Sprite):
             image_stage = pygame.image.load('image/stage'+str(self.stage_id)+'p.png').convert_alpha()
             self.image = image_stage.copy()
             self.image.blit(image_rating, (0, 35))
+            w,h = self.image.get_size()
+            self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
         else:
             image_rating = pygame.image.load('image/'+str(self.rating)+'star.png').convert_alpha()
             image_stage = pygame.image.load('image/stage'+str(self.stage_id)+'.png').convert_alpha()
             self.image = image_stage.copy()
             self.image.blit(image_rating, (0, 35))
+            w,h = self.image.get_size()
+            self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
 
     def update(self, dt):
         self.rect.topleft = (self.pos[0], self.pos[1])
@@ -424,28 +442,29 @@ class Scene(object):
     def __init__(self, screen, stage_id):
         self.screen = screen
         self.running = True
-        initial_pos = (const.REAL_WIDTH / 2 - 50, 40)
         self.clock = pygame.time.Clock()
         self.icons = []
         self.mouse_interactable = []
         self.bg = pygame.image.load('image/bg.png').convert_alpha()
-        self.move_bar = MoveBar((10, 50))
+        w,h = self.bg.get_size()
+        self.bg = pygame.transform.scale(self.bg, (int(w*const.SCALE), int(h*const.SCALE)))
+        self.move_bar = MoveBar((10*const.WSCALE, 50*const.HSCALE))
 
-        self.tool_bar = ToolBar((50, 50))
+        self.tool_bar = ToolBar((50*const.WSCALE, 50*const.HSCALE))
         #tool_icon1 = ToolIcon('u-turn')
         #self.tool_bar.add_icon(tool_icon1)
         #self.icons.append(tool_icon1)
         #self.mouse_interactable.append(tool_icon1)
 
-        self.character_timeline = CharacterTimeline((50, 320))
+        self.character_timeline = CharacterTimeline((50*const.WSCALE, 320*const.HSCALE))
         self.stage_id = stage_id
         self.rating = 0
-        self.character = Character(initial_pos, self)
-        self.maze = Maze((110, 30), self, stage_id)
-        self.back_icon = BackIcon((10, 20))
+        self.character = Character((0,0), self)
+        self.maze = Maze((110*const.WSCALE, 30*const.HSCALE), self, stage_id)
+        self.back_icon = BackIcon((10*const.WSCALE, 20*const.HSCALE))
 
         self.timeline_pointer = TimelinePointer(self.character, self.character_timeline, self.character_timeline.pos)
-        self.win_layer = WinLayer((100, 100), self)
+        self.win_layer = WinLayer((100*const.WSCALE, 100*const.HSCALE), self)
 
         self.mouse_interactable.append(self.back_icon)
         self.mouse_interactable.append(self.win_layer)
@@ -656,7 +675,7 @@ class Scene(object):
                 self.running = False
                 self.scene_manager.go_to(StageChooseScene(self.screen))
             elif item.rect.collidepoint(event.pos) and isinstance(item, WinLayer):
-                return_rect = pygame.rect.Rect(item.rect.left + 50 ,item.rect.top + 95, 75, 15)
+                return_rect = pygame.rect.Rect(item.rect.left + 50*const.SCALE ,item.rect.top + 95*const.SCALE, 75*const.SCALE, 15*const.SCALE)
                 if return_rect.collidepoint(event.pos):
                     self.running = False
                     self.scene_manager.go_to(StageChooseScene(self.screen))
@@ -679,6 +698,8 @@ class ToolIcon(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.pos = [0, 0]
         self.image = pygame.image.load("image/tool-" + typ + ".png").convert_alpha()
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
         self.typ = typ
         self.rect = self.image.get_rect()
         self.is_drag = False
@@ -704,6 +725,8 @@ class ToolBar(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.pos = list(pos)
         self.image = pygame.image.load("image/tool_bar.png").convert_alpha()
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
         self.rect = self.image.get_rect()
         self.con = pygame.sprite.RenderUpdates(self)
         self.icons = []
@@ -712,13 +735,13 @@ class ToolBar(pygame.sprite.Sprite):
         self.icons.append(icon)
         for i, icon in enumerate(self.icons):
             icon.pos = [self.pos[0] - icon.rect.width/2 + self.rect.width/2,
-                        self.pos[1] + 10 +(icon.rect.height + 10)*i]
+                        self.pos[1] + 10*const.SCALE +(icon.rect.height + 10*const.SCALE)*i]
         #print self.icons
 
     def remove_icon(self, icon):
         self.icons.remove(icon)
         for i, icon in enumerate(self.icons):
-            icon.pos = [self.pos[0] + 3, self.pos[1] + 10 + 30*i]
+            icon.pos = [self.pos[0] + 3*const.SCALE, self.pos[1] + 10*const.SCALE + 30*const.SCALE*i]
 
     def update(self, dt):
         self.rect.topleft = (self.pos[0], self.pos[1])
@@ -728,6 +751,9 @@ class MoveIcon(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.pos = [0, 0]
         self.image = pygame.image.load("image/move-" + typ + ".png").convert_alpha()
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+        self.rect = self.image.get_rect()
         self.typ = typ
         self.rect = self.image.get_rect()
         self.is_drag = False
@@ -757,6 +783,8 @@ class MoveBar(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.pos = list(pos)
         self.image = pygame.image.load("image/move_bar.png").convert_alpha()
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
         self.rect = self.image.get_rect()
         self.con = pygame.sprite.RenderUpdates(self)
         self.icons = []
@@ -764,13 +792,13 @@ class MoveBar(pygame.sprite.Sprite):
     def add_icon(self, icon):
         self.icons.append(icon)
         for i, icon in enumerate(self.icons):
-            icon.pos = [self.pos[0] + 3, self.pos[1] + 10 + 30*i]
+            icon.pos = [self.pos[0] + 3*const.SCALE, self.pos[1] + 10*const.SCALE + 30*const.SCALE*i]
         #print self.icons
 
     def remove_icon(self, icon):
         self.icons.remove(icon)
         for i, icon in enumerate(self.icons):
-            icon.pos = [self.pos[0] + 3, self.pos[1] + 10 + 30*i]
+            icon.pos = [self.pos[0] + 3*const.SCALE, self.pos[1] + 10*const.SCALE + 30*const.SCALE*i]
 
     def update(self, dt):
         self.rect.topleft = (self.pos[0], self.pos[1])
@@ -786,6 +814,8 @@ class CharacterTimeline(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.pos = list(pos)
         self.image = pygame.image.load("image/character_timeline.png").convert_alpha()
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
         self.rect = self.image.get_rect()
         self.con = pygame.sprite.RenderUpdates(self)
         self.moves = {} # key move, value time
@@ -812,6 +842,8 @@ class WinLayer(pygame.sprite.Sprite):
         image_win_layer = pygame.image.load('image/win_layer.png').convert_alpha()
         self.image = image_win_layer.copy()
         self.image.blit(image_rating, (45, 55))
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
         self.rect = self.image.get_rect()
         self.con = pygame.sprite.RenderUpdates(self)
 
@@ -825,7 +857,9 @@ class WinLayer(pygame.sprite.Sprite):
         image_win_layer = pygame.image.load('image/win_layer.png').convert_alpha()
         self.image = image_win_layer.copy()
         self.image.blit(image_rating, (45, 55))
-        # self.rect = self.image.get_rect()
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+        self.rect = self.image.get_rect()
         self.rect.topleft = (self.pos[0], self.pos[1])
 
 class HelpIcon(pygame.sprite.Sprite):
@@ -891,6 +925,10 @@ class TimelinePointer(pygame.sprite.Sprite):
     def __init__(self, character, timeline, pos):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load("image/timeline_pointer.png").convert_alpha()
+
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+
         self.rect = self.image.get_rect()
         self.original_pos = (pos[0]-self.rect.width/2, pos[1]-self.rect.height)
         self.pos = list(self.original_pos)
@@ -937,6 +975,11 @@ class Maze(pygame.sprite.Sprite):
         self.pos = list(pos)
         self.con = pygame.sprite.RenderUpdates(self)
         self.image = pygame.image.load("image/maze.png").convert_alpha()
+
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+
+
         self.rect = self.image.get_rect()
         self.maze = []
         self.exit_index = set()
@@ -960,9 +1003,9 @@ class Maze(pygame.sprite.Sprite):
                             new_ob = Exit((x, y))
                             self.exit_index.add(len(self.maze))
                             self.maze.append(new_ob)
-                        x += 15
+                        x += 15*const.SCALE
                     x = pos[0]
-                    y += 15
+                    y += 15*const.SCALE
                 elif i <= 20:
                     if line:
                         if line[0] == '#' or line[:-1] == '':
@@ -995,6 +1038,10 @@ class Exit(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.pos = list(pos)
         self.image = pygame.image.load("image/exit.png").convert_alpha()
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+
+
         self.con = pygame.sprite.RenderUpdates(self)
         self.rect = self.image.get_rect()
 
@@ -1010,6 +1057,8 @@ class Brick(pygame.sprite.Sprite):
             self.image = pygame.image.load("image/brick.png").convert_alpha()
         else:
             self.image = pygame.image.load("image/brick.png").convert_alpha()
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
 
         self.con = pygame.sprite.RenderUpdates(self)
         self.rect = self.image.get_rect()
@@ -1028,6 +1077,9 @@ class Character(pygame.sprite.Sprite):
         self.original_pos = pos
         #self.pos = list(pos)
         self.image = pygame.image.load("image/character.png").convert_alpha()
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+
         self.con = pygame.sprite.RenderUpdates(self)
         self.vel = [0, 0]
         self.rect = self.image.get_rect()
@@ -1036,7 +1088,7 @@ class Character(pygame.sprite.Sprite):
         self.moving_right = False
         self.moving_up = False
         self.moving_down = False
-        self.speed = 120
+        self.speed = 120*const.SCALE
         self.out = False
         self.running = False
 
@@ -1170,6 +1222,8 @@ class BackIcon(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.pos = list(pos)
         self.image = pygame.image.load("image/back_icon.png").convert_alpha()
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
         self.con = pygame.sprite.RenderUpdates(self)
         self.rect = self.image.get_rect()
     def update(self, dt):
