@@ -70,13 +70,21 @@ class ClickIcon(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.pos = list(pos)
         self.typ = typ
-        self.image = pygame.image.load('image/'+ typ +'_icon.png').convert_alpha()
+        self.image = pygame.image.load('image/'+ self.typ +'_icon.png').convert_alpha()
         w,h = self.image.get_size()
-        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+        self.image = pygame.transform.scale(self.image, (int(w*0.03*const.SCALE), int(h*0.03*const.SCALE)))
         self.con = pygame.sprite.RenderUpdates(self)
         self.rect = self.image.get_rect()
-    def update(self, dt):
+    def update(self, dt, mouse_pos):
         self.rect.topleft = (self.pos[0], self.pos[1])
+        #mouse_pos = pygame.mouse.get_pos()
+        if self.rect.collidepoint(mouse_pos):
+            self.image = pygame.image.load('image/'+ self.typ +'_icon_p.png').convert_alpha()
+        else:
+            self.image = pygame.image.load('image/'+ self.typ +'_icon.png').convert_alpha()
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*0.03*const.SCALE), int(h*0.03*const.SCALE)))
+
 
     def toggle(self):
         if self.typ == 'start':
@@ -87,26 +95,23 @@ class ClickIcon(pygame.sprite.Sprite):
             self.typ = 'start'
         self.image = pygame.image.load('image/'+ self.typ +'_icon.png').convert_alpha()
         w,h = self.image.get_size()
-        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+        self.image = pygame.transform.scale(self.image, (int(w*0.03*const.SCALE), int(h*0.03*const.SCALE)))
 
     def reset(self):
         self.typ = 'start'
         self.image = pygame.image.load('image/'+ self.typ +'_icon.png').convert_alpha()
         w,h = self.image.get_size()
-        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+        self.image = pygame.transform.scale(self.image, (int(w*0.03*const.SCALE), int(h*0.03*const.SCALE)))
 
-class HelpIcon(pygame.sprite.Sprite):
-    def __init__(self, pos):
-        pygame.sprite.Sprite.__init__(self)
-        self.pos = list(pos)
-        self.image = pygame.image.load("image/help_icon.png").convert_alpha()
-        self.rect = self.image.get_rect()
-        self.con = pygame.sprite.RenderUpdates(self)
+
 class HelpLayer(pygame.sprite.Sprite):
     def __init__(self, pos, scene):
         pygame.sprite.Sprite.__init__(self)
         self.pos = list(pos)
         self.scene = scene
+        self.con = pygame.sprite.RenderUpdates(self)
+        #self.image
+        #self.rect = Rect(1,1,0,0)
         pass
 
     def update(self, dt):
@@ -218,7 +223,7 @@ class Maze(pygame.sprite.Sprite):
         self.exit_index = set()
         self.tools = []
 
-        with open('maze/s' + str(maze_id), 'r') as f:
+        with open('maze/s{0}'.format(maze_id), 'r') as f:
             this_line = []
             x, y = pos[0], pos[1]
             for i, line in enumerate(f):
@@ -346,7 +351,8 @@ class ToolBar(pygame.sprite.Sprite):
     def remove_icon(self, icon):
         self.icons.remove(icon)
         for i, icon in enumerate(self.icons):
-            icon.pos = [self.pos[0] + 3*const.SCALE, self.pos[1] + 10*const.SCALE + 30*const.SCALE*i]
+            icon.pos = [self.pos[0] - icon.rect.width/2 + self.rect.width/2,
+                        self.pos[1] + 10*const.SCALE +(icon.rect.height + 10*const.SCALE)*i]
 
     def update(self, dt):
         self.rect.topleft = (self.pos[0], self.pos[1])
@@ -357,7 +363,7 @@ class WinLayer(pygame.sprite.Sprite):
         self.pos = list(pos)
         self.scene = scene
 
-        image_rating = pygame.image.load('image/'+str(self.scene.rating)+'star.png').convert_alpha()
+        image_rating = pygame.image.load('image/{0}star.png'.format(self.scene.rating)).convert_alpha()
         image_win_layer = pygame.image.load('image/win_layer.png').convert_alpha()
         self.image = image_win_layer.copy()
         self.image.blit(image_rating, (45, 55))
@@ -372,7 +378,7 @@ class WinLayer(pygame.sprite.Sprite):
             self.scene.rating = 3
         else:
             self.scene.rating = points//300
-        image_rating = pygame.image.load('image/'+str(self.scene.rating)+'star.png').convert_alpha()
+        image_rating = pygame.image.load('image/{0}star.png'.format(self.scene.rating)).convert_alpha()
         image_win_layer = pygame.image.load('image/win_layer.png').convert_alpha()
         self.image = image_win_layer.copy()
         self.image.blit(image_rating, (45, 55))

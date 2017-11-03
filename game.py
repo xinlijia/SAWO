@@ -14,7 +14,7 @@ class GameWindow(object):
 
     def __init__(self, fullscreen=False):
         pygame.display.set_caption('SAWO')
-        self.screen = pygame.display.set_mode((const.WIDTH*const.SCALE, const.HEIGHT*const.SCALE))
+        self.screen = pygame.display.set_mode((const.WIDTH*const.WSCALE, const.HEIGHT*const.HSCALE))
         self.game()
 
     def game(self):

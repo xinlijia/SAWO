@@ -10,15 +10,26 @@ class TitleScene(object):
         self.screen = screen
         self.running = True
         self.clock = pygame.time.Clock()
-        self.bg = pygame.image.load('image/bg.png').convert_alpha()
+        self.bg = pygame.image.load('image/title_bg.png').convert_alpha()
+
+
+        font = pygame.font.SysFont('Arial', 70)
+        self.text_title = font.render('SAWO', True, (255, 255, 255))
+
+
+        # scaling
         w,h = self.bg.get_size()
-        self.bg = pygame.transform.scale(self.bg, (int(w*const.SCALE), int(h*const.SCALE)))
+        self.bg = pygame.transform.scale(self.bg, (int(w*const.WSCALE), int(h*const.HSCALE)))
+        self.bg.blit(self.text_title, (50,50))
+
         self.new_game_button = TitleButton('New Game', (0, 0))
         self.continue_button = TitleButton('Continue', (0, 0))
         self.exit_button = TitleButton('Exit', (0, 0))
         self.title_text_layer = TitleTextLayer((92*const.WSCALE, 100*const.HSCALE), '')
         self.mouse_interactable = [self.new_game_button, self.continue_button, self.exit_button]
         self.save_exist = True
+
+        # warning handler
         self.warning = False
         self.yes = False
         self.click_down_no = False
@@ -35,11 +46,11 @@ class TitleScene(object):
             self.save_exist = False
 
         if self.save_exist:
-            self.new_game_button.pos = [240*const.WSCALE, 270*const.HSCALE]
+            self.new_game_button.pos = [240*const.WSCALE, 260*const.HSCALE]
             self.continue_button.pos = [240*const.WSCALE, 300*const.HSCALE]
-            self.exit_button.pos = [240*const.WSCALE, 330*const.HSCALE]
+            self.exit_button.pos = [240*const.WSCALE, 340*const.HSCALE]
         else:
-            self.new_game_button.pos = [240*const.WSCALE, 270*const.HSCALE]
+            self.new_game_button.pos = [240*const.WSCALE, 260*const.HSCALE]
             self.exit_button.pos = [240*const.WSCALE, 300*const.HSCALE]
 
         for event in pygame.event.get():
@@ -159,7 +170,7 @@ class TitleScene(object):
                             self.warning_manager('remove_save')
                         else:
                             f = open('save/save', 'w+')
-                            for _ in range(3):
+                            for _ in range(6):
                                 f.write('0\n')
                             f.close()
                             self.scene_manager.go_to(StageChooseScene(self.screen))
@@ -207,22 +218,20 @@ class TitleButton(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.pos = list(pos)
         self.font = pygame.font.SysFont('Arial', 30)
-        # self.bg = pygame.image.load('image/title_button_bg.png').convert_alpha()
         self.text = text
         self.image = self.font.render(text, True, (255, 255, 255))
-        #self.image = self.font.render(text, True, (255, 255, 255), (177, 177, 177))
-        w,h = self.image.get_size()
-        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
         self.rect = self.image.get_rect()
         self.con = pygame.sprite.RenderUpdates(self)
 
     def update(self, dt):
         self.rect.topleft = (self.pos[0], self.pos[1])
-    def add_bg(self, is_bg):
-        if is_bg:
+
+    def add_bg(self, is_point_to):
+        if is_point_to:
             self.image = self.font.render(self.text, True, (255, 255, 255), (177, 177, 177))
         else:
             self.image = self.font.render(self.text, True, (255, 255, 255))
+
 class TitleTextLayer(pygame.sprite.Sprite):
     def __init__(self, pos, text1='', text2=''):
         pygame.sprite.Sprite.__init__(self)
@@ -231,62 +240,72 @@ class TitleTextLayer(pygame.sprite.Sprite):
         self.image_bg = pygame.image.load("image/title_text_layer0.png").convert_alpha()
         self.image_text1 = self.font.render(text1, True, (255, 255, 255))
         self.image_text2 = self.font.render(text2, True, (255, 255, 255))
+        w,h = self.image_bg.get_size()
+
+        self.image_bg = pygame.transform.scale(self.image_bg, (int(w*const.SCALE), int(h*const.SCALE)))
 
         self.image = self.image_bg.copy()
-        self.image.blit(self.image_text1, ((100-self.image_text1.get_rect().width/2), 30))
-        self.image.blit(self.image_text2, ((100-self.image_text2.get_rect().width/2), 50))
-        w,h = self.image.get_size()
-        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
-        w,h = self.image.get_size()
-        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
-        self.con = pygame.sprite.RenderUpdates(self)
         self.rect = self.image.get_rect()
+
+        self.image.blit(self.image_text1, ((self.rect.width/2-self.image_text1.get_rect().width/2), self.rect.height/3))
+        self.image.blit(self.image_text2, ((self.rect.width/2-self.image_text1.get_rect().width/2), self.rect.height/3 + self.image_text2.get_rect().height))
+
+        self.con = pygame.sprite.RenderUpdates(self)
     def update_text(self, text1, text2):
         self.image_text1 = self.font.render(text1, True, (255, 255, 255))
         self.image_text2 = self.font.render(text2, True, (255, 255, 255))
 
         self.image = self.image_bg.copy()
-        self.image.blit(self.image_text1, ((100-self.image_text1.get_rect().width/2), 30))
-        self.image.blit(self.image_text2, ((100-self.image_text2.get_rect().width/2), 50))
-        w,h = self.image.get_size()
-        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
-        self.rect = self.image.get_rect()
-    def update_bg(self, bg_id):
-        self.image_bg = pygame.image.load('image/title_text_layer'+str(bg_id)+'.png').convert_alpha()
+        self.image.blit(self.image_text1, ((self.rect.width/2-self.image_text1.get_rect().width/2), self.rect.height/3))
+        self.image.blit(self.image_text2, ((self.rect.width/2-self.image_text1.get_rect().width/2), self.rect.height/3 + self.image_text2.get_rect().height))
 
+    def update_bg(self, bg_id):
+        self.image_bg = pygame.image.load('image/title_text_layer{0}.png'.format(bg_id)).convert_alpha()
+        w,h = self.image_bg.get_size()
+
+        self.image_bg = pygame.transform.scale(self.image_bg, (int(w*const.SCALE), int(h*const.SCALE)))
         self.image = self.image_bg.copy()
-        self.image.blit(self.image_text1, ((100-self.image_text1.get_rect().width/2), 30))
-        self.image.blit(self.image_text2, ((100-self.image_text2.get_rect().width/2), 50))
-        w,h = self.image.get_size()
-        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
-        self.rect = self.image.get_rect()
+
+        self.image.blit(self.image_text1, ((self.rect.width/2-self.image_text1.get_rect().width/2), self.rect.height/3))
+        self.image.blit(self.image_text2, ((self.rect.width/2-self.image_text1.get_rect().width/2), self.rect.height/3 + self.image_text2.get_rect().height))
+
 
     def update(self, dt):
         self.rect.topleft = (self.pos[0], self.pos[1])
 
 
 # TODO:
-# 1. manage more stages, go left/right
 class StageChooseScene(object):
 
-    def __init__(self, screen):
+    def __init__(self, screen, id=0):
         super(StageChooseScene, self).__init__()
         self.screen = screen
         self.running = True
         self.clock = pygame.time.Clock()
-        self.save = [0, 0, 0]
+        self.save = []
+        self.id = id
         self.read_save()
         self.font = pygame.font.SysFont('Arial', 40)
         self.bg = pygame.image.load('image/bg.png').convert_alpha()
         w,h = self.bg.get_size()
-        self.bg = pygame.transform.scale(self.bg, (int(w*const.SCALE), int(h*const.SCALE)))
+        self.bg = pygame.transform.scale(self.bg, (int(w*const.WSCALE), int(h*const.HSCALE)))
         self.back_icon = ClickIcon((10*const.WSCALE, 20*const.HSCALE), 'back')
-        self.stage1 = StageIcon(1, (20*const.WSCALE, 100*const.HSCALE), self.save[0])
-        self.stage2 = StageIcon(2, (140*const.WSCALE, 100*const.HSCALE), self.save[1])
-        self.stage3 = StageIcon(3, (260*const.WSCALE, 100*const.HSCALE), self.save[2])
+        self.left_icon = ClickIcon((10*const.WSCALE, 200*const.HSCALE), 'left')
+        self.right_icon = ClickIcon((350*const.WSCALE, 200*const.HSCALE), 'right')
+        self.icons = [self.back_icon, self.left_icon, self.right_icon]
+        if self.id == 0:
+            self.stage1 = StageIcon(1, (30*const.WSCALE, 100*const.HSCALE), self.save[0])
+            self.stage2 = StageIcon(2, (140*const.WSCALE, 100*const.HSCALE), self.save[1])
+            self.stage3 = StageIcon(3, (250*const.WSCALE, 100*const.HSCALE), self.save[2])
+        else:
+            self.stage1 = StageIcon(4, (30*const.WSCALE, 100*const.HSCALE), self.save[3])
+            self.stage2 = StageIcon(5, (140*const.WSCALE, 100*const.HSCALE), self.save[4])
+            self.stage3 = StageIcon(6, (250*const.WSCALE, 100*const.HSCALE), self.save[5])
         self.stages = [self.stage1, self.stage2, self.stage3]
         self.mouse_interactable = self.stages[:]
-        self.mouse_interactable.append(self.back_icon)
+        self.mouse_interactable += self.icons
+
+
 
     def loop(self):
 
@@ -305,17 +324,13 @@ class StageChooseScene(object):
         dt = self.clock.tick(const.FPS) / 1000.0
         update_rects = []
         mouse_pos = pygame.mouse.get_pos()
-        self.back_icon.con.clear(self.screen, self.bg)
-        self.back_icon.con.update(dt)
-        update_rects += self.back_icon.con.draw(self.screen)
+        for icon in self.icons:
+            icon.con.clear(self.screen, self.bg)
+            icon.con.update(dt, mouse_pos)
+            update_rects += icon.con.draw(self.screen)
         for stage in self.stages:
             stage.con.clear(self.screen, self.bg)
-            if stage.rect.collidepoint(mouse_pos):
-                stage.point_to(True)
-            else:
-                stage.point_to(False)
-
-            stage.con.update(dt)
+            stage.con.update(dt, mouse_pos)
             update_rects += stage.con.draw(self.screen)
 
         pygame.display.update(update_rects)
@@ -325,8 +340,8 @@ class StageChooseScene(object):
     def read_save(self):
         with open('save/save') as save_file:
             for i, line in enumerate(save_file):
-                if i < 3:
-                    self.save[i] = line[:-1]
+                if(line):
+                    self.save.append(line[:-1])
 
     def on_keydown(self, event):
         # for testing
@@ -342,7 +357,12 @@ class StageChooseScene(object):
                     if item.typ == 'back':
                         self.running = False
                         self.scene_manager.go_to(TitleScene(self.screen))
-
+                    if item.typ == 'left':
+                        self.running = False
+                        self.scene_manager.go_to(StageChooseScene(self.screen, (self.id+1)%2))
+                    if item.typ == 'right':
+                        self.running = False
+                        self.scene_manager.go_to(StageChooseScene(self.screen, (self.id-1)%2))
 
 class StageIcon(pygame.sprite.Sprite):
     def __init__(self, stage_id, pos, rating):
@@ -350,34 +370,44 @@ class StageIcon(pygame.sprite.Sprite):
         self.stage_id = stage_id
         self.pos = list(pos)
         self.rating = rating
-        image_rating = pygame.image.load('image/'+str(self.rating)+'star.png').convert_alpha()
-        image_stage = pygame.image.load('image/stage'+str(self.stage_id)+'.png').convert_alpha()
+
+        image_rating = pygame.image.load('image/{0}star.png'.format(self.rating)).convert_alpha()
+        image_stage = pygame.image.load('image/stage.png'.format(self.stage_id)).convert_alpha()
         self.image = image_stage.copy()
         self.image.blit(image_rating, (0, 35))
         w,h = self.image.get_size()
         self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
         self.rect = self.image.get_rect()
+        font = pygame.font.SysFont('Arial', 20)
+        self.stage_id_text = font.render(str(stage_id), True, (255, 255, 255))
+        self.image.blit(self.stage_id_text, (self.rect.width/2-self.stage_id_text.get_rect().width/2, 20))
+
         self.con = pygame.sprite.RenderUpdates(self)
 
     def point_to(self, is_pt):
         if is_pt:
-            image_rating = pygame.image.load('image/'+str(self.rating)+'star.png').convert_alpha()
-            image_stage = pygame.image.load('image/stage'+str(self.stage_id)+'p.png').convert_alpha()
+            image_rating = pygame.image.load('image/{0}star.png'.format(self.rating)).convert_alpha()
+            image_stage = pygame.image.load('image/stage_p.png'.format(self.stage_id)).convert_alpha()
             self.image = image_stage.copy()
             self.image.blit(image_rating, (0, 35))
             w,h = self.image.get_size()
             self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+            self.image.blit(self.stage_id_text, (self.rect.width/2-self.stage_id_text.get_rect().width/2, 20))
         else:
-            image_rating = pygame.image.load('image/'+str(self.rating)+'star.png').convert_alpha()
-            image_stage = pygame.image.load('image/stage'+str(self.stage_id)+'.png').convert_alpha()
+            image_rating = pygame.image.load('image/{0}star.png'.format(self.rating)).convert_alpha()
+            image_stage = pygame.image.load('image/stage.png'.format(self.stage_id)).convert_alpha()
             self.image = image_stage.copy()
             self.image.blit(image_rating, (0, 35))
             w,h = self.image.get_size()
             self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+            self.image.blit(self.stage_id_text, (self.rect.width/2-self.stage_id_text.get_rect().width/2, 20))
 
-    def update(self, dt):
+    def update(self, dt, mouse_pos):
         self.rect.topleft = (self.pos[0], self.pos[1])
-
+        if self.rect.collidepoint(mouse_pos):
+            self.point_to(True)
+        else:
+            self.point_to(False)
 
 class Scene(object):
 
@@ -389,7 +419,7 @@ class Scene(object):
         self.mouse_interactable = []
         self.bg = pygame.image.load('image/bg.png').convert_alpha()
         w,h = self.bg.get_size()
-        self.bg = pygame.transform.scale(self.bg, (int(w*const.SCALE), int(h*const.SCALE)))
+        self.bg = pygame.transform.scale(self.bg, (int(w*const.WSCALE), int(h*const.HSCALE)))
         self.move_bar = MoveBar((10*const.WSCALE, 50*const.HSCALE))
 
         self.tool_bar = ToolBar((50*const.WSCALE, 50*const.HSCALE))
@@ -402,18 +432,23 @@ class Scene(object):
 
         back_icon = ClickIcon((10*const.WSCALE, 20*const.HSCALE), 'back')
         reset_icon = ClickIcon((40*const.WSCALE, 20*const.HSCALE), 'reset')
-        control_icon = ClickIcon((170*const.WSCALE, 330*const.HSCALE), 'start')
+        control_icon = ClickIcon((70*const.WSCALE, 20*const.HSCALE), 'start')
+        help_icon = ClickIcon((355*const.WSCALE, 20*const.HSCALE), 'help')
         self.control_icon = control_icon
-        self.click_icons = [back_icon, control_icon, reset_icon]
-        self.timeline_pointer = TimelinePointer(self.character, self.character_timeline, self.character_timeline.pos)
+        self.click_icons = [back_icon, control_icon, reset_icon, help_icon]
+        self.timeline_pointer = TimelinePointer(self.character, self.character_timeline,
+                            (self.character_timeline.pos[0],
+                            self.character_timeline.pos[1]+self.character_timeline.rect.height/2))
         self.win_layer = WinLayer((100*const.WSCALE, 100*const.HSCALE), self)
+        self.help_layer = HelpLayer((100*const.WSCALE, 100*const.HSCALE), self)
+        self.in_help = False
 
         self.mouse_interactable += self.click_icons
 
 
         self.mouse_interactable.append(self.win_layer)
+        #self.mouse_interactable.append(self.help_layer)
 
-        #self.screen = pygame.surface.Surface((const.REAL_WIDTH, const.REAL_HEIGHT))
 
     def loop(self):
         self.screen.blit(self.bg, (0, 0))
@@ -450,6 +485,10 @@ class Scene(object):
             self.character.con.clear(self.screen, self.bg)
             for icon in self.click_icons:
                 icon.con.clear(self.screen, self.bg)
+
+            self.win_layer.con.clear(self.screen, self.bg)
+            self.help_layer.con.clear(self.screen, self.bg)
+
             # update
 
             dt = self.clock.tick(const.FPS) / 1000.0
@@ -459,17 +498,24 @@ class Scene(object):
             self.character_timeline.con.update(dt)
             self.timeline_pointer.con.update(dt)
             self.maze.con.update(dt)
+
+            mouse_pos = pygame.mouse.get_pos()
+
             for icon in self.move_icons:
                 icon.con.update(dt)
             for ob in self.maze.maze:
                 ob.con.update(dt)
+
             for icon in self.click_icons:
-                icon.con.update(dt)
+                icon.con.update(dt, mouse_pos)
+
             self.character.con.update(self.maze, dt)
 
             if self.character.out:
                 self.win_layer.con.update(dt)
 
+            if self.in_help:
+                self.help_layer.con.update(dt)
 
             # draw
             update_rects = []
@@ -488,12 +534,10 @@ class Scene(object):
                 update_rects += icon.con.draw(self.screen)
             if self.character.out:
                 update_rects += self.win_layer.con.draw(self.screen)
+            elif self.in_help:
+                update_rects += self.help_layer.con.draw(self.screen)
 
 
-            # scaling and updating
-            #scaled_update_rects = [pygame.Rect(2*r.left - 4, 2*r.top - 4, 2*r.width + 8, 2*r.height + 8) for r in update_rects]
-            #pygame.transform.scale(self.screen, (const.WIDTH, const.HEIGHT), self.screen)
-            #pygame.display.update(scaled_update_rects)
             pygame.display.update(update_rects)
 
             if self.character.out:
@@ -530,6 +574,7 @@ class Scene(object):
             self.timeline_pointer.reset()
             self.maze.reset()
             self.character.reset()
+            self.control_icon.reset()
 
     def on_mouseup(self, event):
         for item in self.mouse_interactable:
@@ -566,11 +611,6 @@ class Scene(object):
                         item.pos = [item.original_pos[0], item.original_pos[1]]
             elif isinstance(item, ToolIcon):
                 if item.is_drag:
-
-                    # if(item.rect.top > self.maze.rect.top\
-                    #     and item.rect.bottom < self.maze.rect.bottom\
-                    #     and item.rect.left > self.maze.rect.left\
-                    #     and item.rect.right < self.maze.rect.right):
                     if item.rect.colliderect(self.maze.rect):
                         if item.rect.collidelist(self.maze.maze) == -1:
                             item.is_drag = False
@@ -667,7 +707,6 @@ class Character(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.game = game
         self.original_pos = pos
-        #self.pos = list(pos)
         self.image = pygame.image.load("image/character.png").convert_alpha()
         w,h = self.image.get_size()
         self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
@@ -684,10 +723,6 @@ class Character(pygame.sprite.Sprite):
         self.out = False
         self.running = 0
 
-
-    #def set_rect_pos(self):
-        # self.rect.topleft = (self.pos[0] - self.bb_general.x, self.pos[1] - self.bb_general.y)
-        #self.rect.topleft = (self.pos[0], self.pos[1])
 
     def update(self, maze, dt):
         if self.out:
