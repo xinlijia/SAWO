@@ -695,10 +695,6 @@ class Scene(object):
 
 
 
-
-
-
-
 class Character(pygame.sprite.Sprite):
     """
     docstring for Character.
@@ -722,6 +718,8 @@ class Character(pygame.sprite.Sprite):
         self.speed = 120*const.SCALE
         self.out = False
         self.running = 0
+        self.on_pannel = False
+        self.last_on_pannel = False
 
 
     def update(self, maze, dt):
@@ -764,12 +762,63 @@ class Character(pygame.sprite.Sprite):
     def move_single_axis(self, dx, dy, maze):
         self.rect.x += dx
         self.rect.y += dy
+        self.on_pannel = False
+        for ob in maze.tools:
+            if self.rect.colliderect(ob.rect):
+                if ob.typ == 'u-turn':
+                    if dx > 0:
+                        self.move_left()
+                        self.rect.right = ob.rect.left
+
+                    elif dx < 0:
+                        self.move_right()
+                        self.rect.left = ob.rect.right
+
+                    if dy > 0:
+                        self.move_up()
+                        self.rect.bottom = ob.rect.top
+
+                    elif dy < 0:
+                        self.move_down()
+                        self.rect.top = ob.rect.bottom
+                elif ob.typ == 'speed-up':
+                    self.speed *= 1.1
+                    if dx > 0:
+                        self.rect.left = ob.rect.right
+                    elif dx < 0:
+                        self.rect.right = ob.rect.left
+                    if dy > 0:
+                        self.rect.top = ob.rect.bottom
+                    elif dy < 0:
+                        self.rect.bottom = ob.rect.top
+
+                elif ob.typ == 'speed-down':
+                    self.speed *= 0.9
+                    if dx > 0:
+                        self.rect.left = ob.rect.right
+                    elif dx < 0:
+                        self.rect.right = ob.rect.left
+                    if dy > 0:
+                        self.rect.top = ob.rect.bottom
+                    elif dy < 0:
+                        self.rect.bottom = ob.rect.top
+                elif ob.typ == 'spring':
+                    pass
+                elif ob.typ == 'transport':
+                    pass
+
+
         for ob in maze.maze:
             if self.rect.colliderect(ob.rect):
-                if isinstance(ob, Exit):
+                if isinstance(ob, ControlPannel):
+                    if not self.last_on_pannel:
+                        for c in maze.controls[ob.tag]:
+                            c.toggle()
+                    self.on_pannel = True
+                elif isinstance(ob, Exit):
                     self.out = True
                     print 'out'
-                else:
+                elif isinstance(ob, Brick):
                     if dx > 0:
                         self.rect.right = ob.rect.left
                     elif dx < 0:
@@ -778,19 +827,18 @@ class Character(pygame.sprite.Sprite):
                         self.rect.bottom = ob.rect.top
                     elif dy < 0:
                         self.rect.top = ob.rect.bottom
-        # TODO collide with tools
-        for ob in maze.tools:
-            if self.rect.colliderect(ob.rect):
-                if ob.typ == 'u-turn':
-                    if dx > 0:
-                        self.move_left()
-                    elif dx < 0:
-                        self.move_right()
-                    if dy > 0:
-                        self.move_up()
-                    elif dy < 0:
-                        self.move_down()
+                elif isinstance(ob, ControlDoor):
+                    if not ob.is_open:
+                        if dx > 0:
+                            self.rect.right = ob.rect.left
+                        elif dx < 0:
+                            self.rect.left = ob.rect.right
+                        if dy > 0:
+                            self.rect.bottom = ob.rect.top
+                        elif dy < 0:
+                            self.rect.top = ob.rect.bottom
 
+        self.last_on_pannel = self.on_pannel
 
     def update_move(self, maze, dt):
 

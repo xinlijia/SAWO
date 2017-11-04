@@ -222,7 +222,7 @@ class Maze(pygame.sprite.Sprite):
         self.maze = []
         self.exit_index = set()
         self.tools = []
-
+        self.controls = {}
         with open('maze/s{0}'.format(maze_id), 'r') as f:
             this_line = []
             x, y = pos[0], pos[1]
@@ -241,6 +241,17 @@ class Maze(pygame.sprite.Sprite):
                             new_ob = Exit((x, y))
                             self.exit_index.add(len(self.maze))
                             self.maze.append(new_ob)
+                        elif c == 'l':
+                            new_ob = ControlPannel((x, y), 1)
+                            self.maze.append(new_ob)
+                        elif c == 'd':
+                            tag = 1
+                            new_ob = ControlDoor((x, y), tag)
+                            self.maze.append(new_ob)
+                            if tag in self.controls:
+                                self.controls[tag].append(new_ob)
+                            else:
+                                self.controls[tag] = [new_ob]
                         x += 15*const.SCALE
                     x = pos[0]
                     y += 15*const.SCALE
@@ -270,6 +281,49 @@ class Maze(pygame.sprite.Sprite):
 
     def reset(self):
         pass
+
+class ControlPannel(pygame.sprite.Sprite):
+    def __init__(self, pos, tag):
+        pygame.sprite.Sprite.__init__(self)
+        self.pos = list(pos)
+        self.image = pygame.image.load("image/control_pannel_{0}.png".format(tag)).convert_alpha()
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+        self.tag = tag
+        self.con = pygame.sprite.RenderUpdates(self)
+        self.rect = self.image.get_rect()
+        self.doors = []
+
+    def update(self, dt):
+        self.rect.topleft = (self.pos[0], self.pos[1])
+
+    def add_door(self, door):
+        self.doors.append(door)
+
+class ControlDoor(pygame.sprite.Sprite):
+    def __init__(self, pos, tag):
+        pygame.sprite.Sprite.__init__(self)
+        self.pos = list(pos)
+        self.tag = tag
+
+        self.image = pygame.image.load("image/control_door_{0}.png".format(tag)).convert_alpha()
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+        self.con = pygame.sprite.RenderUpdates(self)
+        self.is_open = False
+        self.rect = self.image.get_rect()
+
+    def update(self, dt):
+        self.rect.topleft = (self.pos[0], self.pos[1])
+
+    def toggle(self):
+        if not self.is_open:
+            self.is_open = True
+            self.image = pygame.image.load("image/control_door_{0}_open.png".format(self.tag)).convert_alpha()
+        else:
+            self.is_open = False
+            self.image = pygame.image.load("image/control_door_{0}.png".format(self.tag)).convert_alpha()
+        print self.is_open
 
 class Exit(pygame.sprite.Sprite):
     def __init__(self, pos):
