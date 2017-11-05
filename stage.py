@@ -88,11 +88,12 @@ class ClickIcon(pygame.sprite.Sprite):
 
     def toggle(self):
         if self.typ == 'start':
-            self.typ = 'fast_forward'
-        elif self.typ == 'fast_forward':
             self.typ = 'pause'
         elif self.typ == 'pause':
             self.typ = 'start'
+
+        elif self.typ == 'fast_ward_s':
+            self.typ == 'fast_ward_r'
         self.image = pygame.image.load('image/'+ self.typ +'_icon.png').convert_alpha()
         w,h = self.image.get_size()
         self.image = pygame.transform.scale(self.image, (int(w*0.03*const.SCALE), int(h*0.03*const.SCALE)))
@@ -159,7 +160,7 @@ class TimelinePointer(pygame.sprite.Sprite):
         self.con = pygame.sprite.RenderUpdates(self)
         self.character = character
         self.timeline = timeline
-        self.running = 0
+        self.running = False
         self.past_move = set()
         self.out = False
         self.speed = 100
@@ -189,22 +190,13 @@ class TimelinePointer(pygame.sprite.Sprite):
 
     def toggle_pause(self):
         if not self.out:
-            print self.running
-            if not self.running:
-                self.running = 1
-            elif self.running == 1:
-                self.running = 2
-                self.speed *= 2
-            elif self.running == 2:
-                self.running = 0
-                self.speed /= 2
-
+            self.running = not self.running
     def reset(self):
         self.out = False
         self.running = 0
         self.pos = list(self.original_pos)
         self.past_move = set()
-
+        self.speed = 100
 
 class Maze(pygame.sprite.Sprite):
     def __init__(self, pos, scene, maze_id):
@@ -323,6 +315,10 @@ class ControlDoor(pygame.sprite.Sprite):
         else:
             self.is_open = False
             self.image = pygame.image.load("image/control_door_{0}.png".format(self.tag)).convert_alpha()
+        w,h = self.image.get_size()
+
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+
         print self.is_open
 
 class Exit(pygame.sprite.Sprite):

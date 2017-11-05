@@ -207,9 +207,10 @@ class TitleScene(object):
                         self.on_mouseup(event)
             self.warning = False
             if self.yes:
-                f = open('save/save', 'w')
-                for _ in range(3):
+                f = open('save/save', 'w+')
+                for _ in range(6):
                     f.write('0\n')
+                f.close()
                 self.scene_manager.go_to(StageChooseScene(self.screen))
                 self.yes = False
 
@@ -338,7 +339,7 @@ class StageChooseScene(object):
         return True
 
     def read_save(self):
-        with open('save/save') as save_file:
+        with open('save/save', 'r') as save_file:
             for i, line in enumerate(save_file):
                 if(line):
                     self.save.append(line[:-1])
@@ -669,7 +670,7 @@ class Scene(object):
                     self.maze.reset()
                     self.character.reset()
                     self.control_icon.reset()
-                elif item.typ == 'start' or item.typ == 'pause' or item.typ == 'fast_forward':
+                elif item.typ == 'start' or item.typ == 'pause':
                     self.timeline_pointer.toggle_pause()
                     self.character.toggle_pause()
                     item.toggle()
@@ -717,7 +718,7 @@ class Character(pygame.sprite.Sprite):
         self.moving_down = False
         self.speed = 120*const.SCALE
         self.out = False
-        self.running = 0
+        self.running = False
         self.on_pannel = False
         self.last_on_pannel = False
 
@@ -874,14 +875,7 @@ class Character(pygame.sprite.Sprite):
 
     def toggle_pause(self):
         if not self.out:
-            if not self.running:
-                self.running = 1
-            elif self.running == 1:
-                self.running = 2
-                self.speed *= 2
-            elif self.running == 2:
-                self.running = 0
-                self.speed /= 2
+            self.running = not self.running
 
     def set_origanal_pos(self, pos):
         self.original_pos = pos
@@ -890,7 +884,7 @@ class Character(pygame.sprite.Sprite):
 
     def reset(self):
         self.rect.topleft = list(self.original_pos)
-        self.vel = [0, 0]
+        self.speed = 120
         self.moving_left = False
         self.moving_right = False
         self.moving_up = False
