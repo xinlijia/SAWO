@@ -2,6 +2,7 @@ import pygame
 from pygame.locals import *
 from stage import *
 import const
+import util
 import sys
 
 class TitleScene(object):
@@ -704,14 +705,11 @@ class Character(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.game = game
         self.original_pos = pos
-        self.image = pygame.image.load("image/character.png").convert_alpha()
-        w,h = self.image.get_size()
-        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+
 
         self.con = pygame.sprite.RenderUpdates(self)
         self.vel = [0, 0]
-        self.rect = self.image.get_rect()
-        self.rect.topleft = list(self.original_pos)
+
         self.moving_left = False
         self.moving_right = False
         self.moving_up = False
@@ -722,12 +720,51 @@ class Character(pygame.sprite.Sprite):
         self.on_pannel = False
         self.last_on_pannel = False
 
+        # self.image = pygame.image.load("image/character.png").convert_alpha()
+        # w,h = self.image.get_size()
+        # self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+
+        self.direction = 'd'
+
+        self.image_ss = pygame.image.load('image/character_ss.png').convert_alpha()
+        self.images = util.slice_sprite_sheet(self.image_ss, 64, 64)
+
+
+        walk_anim_interval = 0.15
+        self.still_down_image = self.images[0][0]
+        self.still_left_image = self.images[1][0]
+        self.still_right_image = self.images[2][0]
+        self.still_up_image = self.images[3][0]
+
+        self.move_down_image = util.Animation([self.images[0][1], self.images[0][3]], walk_anim_interval)
+        self.move_left_image = util.Animation([self.images[1][1], self.images[1][3]], walk_anim_interval)
+        self.move_right_image = util.Animation([self.images[2][1], self.images[2][3]], walk_anim_interval)
+        self.move_up_image = util.Animation([self.images[3][1], self.images[3][3]], walk_anim_interval)
+
+        self.still_images = {'d': self.still_down_image, 'u': self.still_up_image, 'r': self.still_right_image, 'l': self.still_left_image}
+        self.move_images = {'d': self.move_down_image, 'u': self.move_up_image, 'r': self.move_right_image, 'l': self.move_left_image}
+
+        self.image = self.still_down_image
+
+        self.rect = self.image.get_rect()
+        self.rect.topleft = list(self.original_pos)
 
     def update(self, maze, dt):
         if self.out:
             return
         if self.running:
+            try:
+                frame = self.image.update(dt)
+            except AttributeError:
+                pass # not animation
             self.update_move(maze, dt)
+
+            self.update_direction()
+
+
+    def set_image(self, image):
+        self.image = image
+
 
 
 
@@ -861,16 +898,23 @@ class Character(pygame.sprite.Sprite):
 
 
     def update_direction(self):
-        self.direction = ''
-        if self.vel[1] > 0:
-            self.direction += 'd'
-        elif self.vel[1] < 0:
-            self.direction += 'u'
+        still = False
+
+        if self.moving_down:
+            self.direction = 'd'
+        elif self.moving_up:
+            self.direction = 'u'
         else:
-            if self.vel[0] > 0:
-                self.direction += 'r'
-            elif self.vel[0] < 0:
-                self.direction += 'l'
+            if self.moving_right:
+                self.direction = 'r'
+            elif self.moving_left:
+                self.direction = 'l'
+            else:
+                still = True
+        if still:
+            self.set_image(self.still_images[self.direction])
+        else:
+            self.set_image(self.move_images[self.direction])
 
 
     def toggle_pause(self):
