@@ -214,13 +214,16 @@ class Maze(pygame.sprite.Sprite):
         self.maze = []
         self.exit_index = set()
         self.tools = []
-        self.controls = {}
+        self.control_dic = {'}':'{', ']':'[', '>':'<'}
+        self.control_pairs = {}
         with open('maze/s{0}'.format(maze_id), 'r') as f:
             this_line = []
             x, y = pos[0], pos[1]
             for i, line in enumerate(f):
                 if i <= 15:
                     for j, c in enumerate(line):
+                        if c == ' ':
+                            pass
                         if c == '|':
                             new_ob = Brick((x, y), True)
                             self.maze.append(new_ob)
@@ -233,17 +236,17 @@ class Maze(pygame.sprite.Sprite):
                             new_ob = Exit((x, y))
                             self.exit_index.add(len(self.maze))
                             self.maze.append(new_ob)
-                        elif c == 'l':
-                            new_ob = ControlPannel((x, y), 1)
+                        elif c in ('{', '[', '<'):
+                            new_ob = ControlPannel((x, y), c)
                             self.maze.append(new_ob)
-                        elif c == 'd':
-                            tag = 1
+                        elif c in ('}', ']', '>'):
+                            tag = self.control_dic[c]
                             new_ob = ControlDoor((x, y), tag)
                             self.maze.append(new_ob)
-                            if tag in self.controls:
-                                self.controls[tag].append(new_ob)
+                            if tag in self.control_pairs:
+                                self.control_pairs[tag].append(new_ob)
                             else:
-                                self.controls[tag] = [new_ob]
+                                self.control_pairs[tag] = [new_ob]
                         x += 15*const.SCALE
                     x = pos[0]
                     y += 15*const.SCALE
@@ -272,7 +275,9 @@ class Maze(pygame.sprite.Sprite):
         self.rect.topleft = (self.pos[0], self.pos[1])
 
     def reset(self):
-        pass
+        for ob in self.maze:
+            if isinstance(ob, ControlDoor):
+                ob.reset()
 
 class ControlPannel(pygame.sprite.Sprite):
     def __init__(self, pos, tag):
@@ -291,6 +296,7 @@ class ControlPannel(pygame.sprite.Sprite):
 
     def add_door(self, door):
         self.doors.append(door)
+
 
 class ControlDoor(pygame.sprite.Sprite):
     def __init__(self, pos, tag):
@@ -319,7 +325,12 @@ class ControlDoor(pygame.sprite.Sprite):
 
         self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
 
-        print self.is_open
+    def reset(self):
+        self.is_open = False
+        self.image = pygame.image.load("image/control_door_{0}.png".format(self.tag)).convert_alpha()
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+
 
 class Exit(pygame.sprite.Sprite):
     def __init__(self, pos):

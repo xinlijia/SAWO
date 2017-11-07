@@ -726,8 +726,14 @@ class Character(pygame.sprite.Sprite):
 
         self.direction = 'd'
 
+
+
         self.image_ss = pygame.image.load('image/character_ss.png').convert_alpha()
-        self.images = util.slice_sprite_sheet(self.image_ss, 64, 64)
+
+        w,h = self.image_ss.get_size()
+        self.image_ss = pygame.transform.scale(self.image_ss, (int(w/4*const.WSCALE), int(h/4*const.HSCALE)))
+
+        self.images = util.slice_sprite_sheet(self.image_ss, 64/4*const.WSCALE, 64/4*const.WSCALE, 38/4*const.WSCALE, 50/4*const.WSCALE)
 
 
         walk_anim_interval = 0.15
@@ -850,7 +856,7 @@ class Character(pygame.sprite.Sprite):
             if self.rect.colliderect(ob.rect):
                 if isinstance(ob, ControlPannel):
                     if not self.last_on_pannel:
-                        for c in maze.controls[ob.tag]:
+                        for c in maze.control_pairs[ob.tag]:
                             c.toggle()
                     self.on_pannel = True
                 elif isinstance(ob, Exit):

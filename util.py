@@ -40,12 +40,15 @@ class Animation(pygame.surface.Surface):
             return self.current_frame
         return None
 
-def slice_sprite_sheet(image, tile_size_x, tile_size_y):
+def slice_sprite_sheet(image, tile_size_x, tile_size_y, image_x, image_y):
     sheet_width, sheet_height = image.get_size()
     width = int(sheet_width / tile_size_x)
     height = int(sheet_height / tile_size_y)
     images = [[None for j in xrange(width)] for i in xrange(height)]
+    half_x = (tile_size_x - image_x)/2
+    half_y = (tile_size_y - image_y)/2
+
     for i in xrange(height):
         for j in xrange(width):
-            images[i][j] = image.subsurface(j * tile_size_x, i * tile_size_y, tile_size_x, tile_size_y)
+            images[i][j] = image.subsurface(j * tile_size_x + half_x, i * tile_size_y + half_y, image_x, image_y)
     return images
