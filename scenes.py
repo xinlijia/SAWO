@@ -529,7 +529,6 @@ class Scene(object):
             for ob in self.maze.maze:
                 update_rects += ob.con.draw(self.screen)
             update_rects += self.timeline_pointer.con.draw(self.screen)
-            update_rects += self.character.con.draw(self.screen)
             for icon in self.move_icons:
                 update_rects += icon.con.draw(self.screen)
             for icon in self.click_icons:
@@ -539,6 +538,7 @@ class Scene(object):
             elif self.in_help:
                 update_rects += self.help_layer.con.draw(self.screen)
 
+            update_rects += self.character.con.draw(self.screen)
 
             pygame.display.update(update_rects)
 
@@ -620,12 +620,9 @@ class Scene(object):
 
                             item.off_set_x = 0
                             item.off_set_y = 0
-                            if item in self.maze.tools:
-                                self.maze.tools.remove(item)
-                            elif item in self.tool_bar.icons:
-                                self.tool_bar.remove_icon(item)
-                            self.maze.tools.append(item)
-                            print self.maze.tools
+                            self.maze.remove_tool(item)
+                            self.tool_bar.remove_icon(item)
+                            self.maze.add_tool(item)
                         else:
                             item.is_drag = False
                             item.off_set_x = 0
@@ -636,10 +633,8 @@ class Scene(object):
                         item.is_drag = False
                         item.off_set_x = 0
                         item.off_set_y = 0
-                        if item in self.maze.tools:
-                            self.maze.tools.remove(item)
-                        elif item in self.tool_bar.icons:
-                            self.tool_bar.remove_icon(item)
+                        self.maze.remove_tool(item)
+                        self.tool_bar.remove_icon(item)
                         self.tool_bar.add_icon(item)
                     else:
                         item.is_drag = False
@@ -717,8 +712,8 @@ class Character(pygame.sprite.Sprite):
         self.speed = 120*const.SCALE
         self.out = False
         self.running = False
-        self.on_pannel = False
-        self.last_on_pannel = False
+        self.on_panel = False
+        self.last_on_panel = False
 
         # self.image = pygame.image.load("image/character.png").convert_alpha()
         # w,h = self.image.get_size()
@@ -806,7 +801,7 @@ class Character(pygame.sprite.Sprite):
     def move_single_axis(self, dx, dy, maze):
         self.rect.x += dx
         self.rect.y += dy
-        self.on_pannel = False
+        self.on_panel = False
         for ob in maze.tools:
             if self.rect.colliderect(ob.rect):
                 if ob.typ == 'u-turn':
@@ -848,17 +843,35 @@ class Character(pygame.sprite.Sprite):
                         self.rect.bottom = ob.rect.top
                 elif ob.typ == 'spring':
                     pass
-                elif ob.typ == 'transport':
-                    pass
+                elif ob.typ == 'teleportA':
+                    if not self.on_panel\
+                        and self.rect.collidepoint((ob.rect.left + ob.rect.width/2, ob.rect.top + ob.rect.height/2)):
+                        if 'teleportA' in maze.teleport_pairs and 'teleportB' in maze.teleport_pairs:
+                            des_rect = maze.teleport_pairs['teleportA'].rect
+                            #self.rect.topleft = (des_rect.top - des_rect.height/2 + self.rect.height/2,
+                            #                    des_rect.left - des_rect.width/2 + self.rect.width/2)
+                            self.rect.topleft = des_rect.topleft
+                            self.on_panel = True
+                elif ob.typ == 'teleportB':
+                    if not self.on_panel\
+                        and self.rect.collidepoint((ob.rect.left + ob.rect.width/2, ob.rect.top + ob.rect.height/2)):
 
+                        if 'teleportB' in maze.teleport_pairs and 'teleportA' in maze.teleport_pairs:
+
+                            des_rect = maze.teleport_pairs['teleportB'].rect
+                            #self.rect.topleft = (des_rect.top - des_rect.height/2 + self.rect.height/2,
+                            #                    des_rect.left - des_rect.width/2 + self.rect.width/2)
+                            self.rect.topleft = des_rect.topleft
+
+                            self.on_panel = True
 
         for ob in maze.maze:
             if self.rect.colliderect(ob.rect):
                 if isinstance(ob, ControlPannel):
-                    if not self.last_on_pannel:
+                    if not self.last_on_panel:
                         for c in maze.control_pairs[ob.tag]:
                             c.toggle()
-                    self.on_pannel = True
+                    self.on_panel = True
                 elif isinstance(ob, Exit):
                     self.out = True
                     print 'out'
@@ -882,7 +895,7 @@ class Character(pygame.sprite.Sprite):
                         elif dy < 0:
                             self.rect.top = ob.rect.bottom
 
-        self.last_on_pannel = self.on_pannel
+        self.last_on_panel = self.on_panel
 
     def update_move(self, maze, dt):
 

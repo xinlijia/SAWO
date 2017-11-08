@@ -216,6 +216,7 @@ class Maze(pygame.sprite.Sprite):
         self.tools = []
         self.control_dic = {'}':'{', ']':'[', '>':'<'}
         self.control_pairs = {}
+        self.teleport_pairs = {}
         with open('maze/s{0}'.format(maze_id), 'r') as f:
             this_line = []
             x, y = pos[0], pos[1]
@@ -264,6 +265,8 @@ class Maze(pygame.sprite.Sprite):
                         if line[0] == '#' or line[:-1] == '':
                             pass
                         else:
+                            print line[:-1]
+
                             new_tool_icon = ToolIcon(line[:-1])
                             self.scene.tool_bar.add_icon(new_tool_icon)
                             self.scene.move_icons.append(new_tool_icon)
@@ -279,11 +282,28 @@ class Maze(pygame.sprite.Sprite):
             if isinstance(ob, ControlDoor):
                 ob.reset()
 
+    def add_tool(self, tool):
+        self.remove_tool(tool)
+        if tool.typ == 'teleportA':
+            self.teleport_pairs['teleportB'] = tool
+        elif tool.typ == 'teleportB':
+            self.teleport_pairs['teleportA'] = tool
+        self.tools.append(tool)
+    def remove_tool(self, tool):
+
+        if tool in self.tools:
+            self.tools.remove(tool)
+            if tool.typ == 'teleportA':
+                del self.teleport_pairs['teleportB']
+            elif tool.typ == 'teleportB':
+                del self.teleport_pairs['teleportA']
+
+
 class ControlPannel(pygame.sprite.Sprite):
     def __init__(self, pos, tag):
         pygame.sprite.Sprite.__init__(self)
         self.pos = list(pos)
-        self.image = pygame.image.load("image/control_pannel_{0}.png".format(tag)).convert_alpha()
+        self.image = pygame.image.load("image/control_panel_{0}.png".format(tag)).convert_alpha()
         w,h = self.image.get_size()
         self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
         self.tag = tag
@@ -410,10 +430,11 @@ class ToolBar(pygame.sprite.Sprite):
         #print self.icons
 
     def remove_icon(self, icon):
-        self.icons.remove(icon)
-        for i, icon in enumerate(self.icons):
-            icon.pos = [self.pos[0] - icon.rect.width/2 + self.rect.width/2,
-                        self.pos[1] + 10*const.SCALE +(icon.rect.height + 10*const.SCALE)*i]
+        if icon in self.icons:
+            self.icons.remove(icon)
+            for i, icon in enumerate(self.icons):
+                icon.pos = [self.pos[0] - icon.rect.width/2 + self.rect.width/2,
+                            self.pos[1] + 10*const.SCALE +(icon.rect.height + 10*const.SCALE)*i]
 
     def update(self, dt):
         self.rect.topleft = (self.pos[0], self.pos[1])
