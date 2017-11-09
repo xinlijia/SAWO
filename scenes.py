@@ -844,27 +844,29 @@ class Character(pygame.sprite.Sprite):
                 elif ob.typ == 'spring':
                     pass
                 elif ob.typ == 'teleportA':
-                    if not self.on_panel\
-                        and self.rect.collidepoint((ob.rect.left + ob.rect.width/2, ob.rect.top + ob.rect.height/2)):
+                    if not self.last_on_panel\
+                        and self.rect.collidepoint(ob.rect.center):
                         if 'teleportA' in maze.teleport_pairs and 'teleportB' in maze.teleport_pairs:
                             des_rect = maze.teleport_pairs['teleportA'].rect
-                            #self.rect.topleft = (des_rect.top - des_rect.height/2 + self.rect.height/2,
-                            #                    des_rect.left - des_rect.width/2 + self.rect.width/2)
-                            self.rect.topleft = des_rect.topleft
+                            self.rect.topleft = (des_rect.left + des_rect.width/2 - self.rect.width/2,
+                                                des_rect.top + des_rect.height/2 - self.rect.height/2)
+                            #self.rect.topleft = des_rect.topleft
                             self.on_panel = True
                 elif ob.typ == 'teleportB':
-                    if not self.on_panel\
-                        and self.rect.collidepoint((ob.rect.left + ob.rect.width/2, ob.rect.top + ob.rect.height/2)):
+                    if not self.last_on_panel\
+                        and self.rect.collidepoint(ob.rect.center):
 
                         if 'teleportB' in maze.teleport_pairs and 'teleportA' in maze.teleport_pairs:
 
                             des_rect = maze.teleport_pairs['teleportB'].rect
-                            #self.rect.topleft = (des_rect.top - des_rect.height/2 + self.rect.height/2,
-                            #                    des_rect.left - des_rect.width/2 + self.rect.width/2)
-                            self.rect.topleft = des_rect.topleft
+                            self.rect.topleft = (des_rect.left + des_rect.width/2 - self.rect.width/2,
+                                                des_rect.top + des_rect.height/2 - self.rect.height/2)
+                            print des_rect.topleft, des_rect.top, des_rect.left
+
+                            #self.rect.topleft = des_rect.topleft
 
                             self.on_panel = True
-
+                self.last_on_panel = self.on_panel
         for ob in maze.maze:
             if self.rect.colliderect(ob.rect):
                 if isinstance(ob, ControlPannel):
@@ -948,6 +950,8 @@ class Character(pygame.sprite.Sprite):
     def reset(self):
         self.rect.topleft = list(self.original_pos)
         self.speed = 120
+        self.direction = 'd'
+        self.set_image(self.still_images['d'])
         self.moving_left = False
         self.moving_right = False
         self.moving_up = False
