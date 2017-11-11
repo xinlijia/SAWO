@@ -1,5 +1,6 @@
 import math
 import pygame
+import const
 
 
 class Animation(pygame.surface.Surface):
@@ -52,3 +53,8 @@ def slice_sprite_sheet(image, tile_size_x, tile_size_y, image_x, image_y):
         for j in xrange(width):
             images[i][j] = image.subsurface(j * tile_size_x + half_x, i * tile_size_y + half_y, image_x, image_y)
     return images
+
+
+def scale_surface(surface):
+    w,h = surface.get_size()
+    return pygame.transform.scale(surface, (int(w*const.SCALE/2), int(h*const.SCALE/2)))

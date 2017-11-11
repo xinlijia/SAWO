@@ -118,8 +118,6 @@ class HelpLayer(pygame.sprite.Sprite):
     def update(self, dt):
         pass
 
-# TODO: start, pause buttons, fast forward
-
 
 
 class CharacterTimeline(pygame.sprite.Sprite):
@@ -466,5 +464,43 @@ class WinLayer(pygame.sprite.Sprite):
         self.image.blit(image_rating, (45, 55))
         w,h = self.image.get_size()
         self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+        self.rect.topleft = (self.pos[0], self.pos[1])
+
+
+class HelpLayer(pygame.sprite.Sprite):
+    def __init__(self, pos, scene):
+        pygame.sprite.Sprite.__init__(self)
+        self.pos = list(pos)
+        self.scene = scene
+        self.con = pygame.sprite.RenderUpdates(self)
+        font = pygame.font.SysFont('Arial', 20)
+        move_help_dic = {'left':'go left', 'right':'go right', 'up':'go up', 'down':'go down'}
+        tool_help_dic = {'u-turn':'turn back', 'teleportA': 'teleport to panelB', 'teleportB': 'teleport to panelA'}
+        image_help_layer = pygame.image.load('image/help_layer.png').convert_alpha()
+        self.image = image_help_layer.copy()
+        w,h = self.image.get_size()
+        self.image = pygame.transform.scale(self.image, (int(w*const.SCALE), int(h*const.SCALE)))
+
+        i = 0
+        for move in scene.move_bar.icons:
+            text = font.render('{0}: {1}'.format(move.typ, move_help_dic[move.typ]), True, (255, 255, 255))
+            self.image.blit(text, (45, 25 + i))
+            icon = pygame.image.load("image/move-" + move.typ + ".png").convert_alpha()
+            w,h = icon.get_size()
+            icon = pygame.transform.scale(icon, (int(w*const.SCALE/2), int(h*const.SCALE/2)))
+            self.image.blit(icon, (15, 25 + i))
+            i += 30
+        for tool in scene.tool_bar.icons:
+            text = font.render('{0}: {1}'.format(tool.typ, tool_help_dic[tool.typ]), True, (255, 255, 255))
+            self.image.blit(text, (45, 25 + i))
+            icon = pygame.image.load("image/tool-" + tool.typ + ".png").convert_alpha()
+            w,h = icon.get_size()
+            icon = pygame.transform.scale(icon, (int(w*const.SCALE/2), int(h*const.SCALE/2)))
+            self.image.blit(icon, (15, 25 + i))
+            i += 30
+
         self.rect = self.image.get_rect()
+        self.con = pygame.sprite.RenderUpdates(self)
+
+    def update(self, dt):
         self.rect.topleft = (self.pos[0], self.pos[1])

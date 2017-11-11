@@ -449,7 +449,7 @@ class Scene(object):
 
 
         self.mouse_interactable.append(self.win_layer)
-        #self.mouse_interactable.append(self.help_layer)
+        self.mouse_interactable.append(self.help_layer)
 
 
     def loop(self):
@@ -533,12 +533,13 @@ class Scene(object):
                 update_rects += icon.con.draw(self.screen)
             for icon in self.click_icons:
                 update_rects += icon.con.draw(self.screen)
+            update_rects += self.character.con.draw(self.screen)
+
             if self.character.out:
                 update_rects += self.win_layer.con.draw(self.screen)
             elif self.in_help:
                 update_rects += self.help_layer.con.draw(self.screen)
 
-            update_rects += self.character.con.draw(self.screen)
 
             pygame.display.update(update_rects)
 
@@ -670,12 +671,21 @@ class Scene(object):
                     self.timeline_pointer.toggle_pause()
                     self.character.toggle_pause()
                     item.toggle()
+                elif item.typ == 'help':
+                    self.in_help = True
 
-            elif item.rect.collidepoint(event.pos) and isinstance(item, WinLayer):
+            elif self.character.out and item.rect.collidepoint(event.pos) and isinstance(item, WinLayer):
                 return_rect = pygame.rect.Rect(item.rect.left + 50*const.SCALE ,item.rect.top + 95*const.SCALE, 75*const.SCALE, 15*const.SCALE)
                 if return_rect.collidepoint(event.pos):
                     self.running = False
                     self.scene_manager.go_to(StageChooseScene(self.screen))
+
+            elif self.in_help and item.rect.collidepoint(event.pos) and isinstance(item, HelpLayer):
+                return_rect = pygame.rect.Rect(item.rect.left + 146*const.SCALE ,item.rect.top + 6*const.SCALE, 27*const.SCALE, 17*const.SCALE)
+                if return_rect.collidepoint(event.pos):
+                    self.in_help = False
+
+
 
     def save_to_file(self):
         ratings = []
