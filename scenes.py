@@ -596,8 +596,8 @@ class Scene(object):
                             # comment out if don't want repeating use of move
                             if item in self.timeline_pointer.past_move:
                                 self.timeline_pointer.past_move.remove(item)
-
-                        self.character_timeline.add_move(item, item.pos[0])
+                        if item.pos[0] > self.timeline_pointer.pos[0]:
+                            self.character_timeline.add_move(item, item.pos[0])
                     elif item.rect.colliderect(self.move_bar):
                         item.is_drag = False
                         item.off_set_x = 0
@@ -775,8 +775,6 @@ class Character(pygame.sprite.Sprite):
 
     def set_image(self, image):
         self.image = image
-
-
 
 
     def move_left(self):

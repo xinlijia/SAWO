@@ -165,26 +165,31 @@ class TimelinePointer(pygame.sprite.Sprite):
 
     def update(self, dt):
         # TODO: modifiable time line scale
+        self.rect.topleft = (self.pos[0], self.pos[1])
+
         if self.out:
             return
-        if self.running:
-            self.pos[0] += self.speed * dt
         if self.pos[0] > self.timeline.pos[0] + self.timeline.rect.width - self.rect.width/2:
             self.pos[0] = self.timeline.pos[0] + self.timeline.rect.width - self.rect.width/2
-        self.rect.topleft = (self.pos[0], self.pos[1])
-        for move in self.timeline.moves:
-            if self.timeline.moves[move] <= self.pos[0] and move not in self.past_move:
-                print move.typ
-                if move.typ == 'up':
-                    self.character.move_up()
-                elif move.typ == 'left':
-                    self.character.move_left()
-                elif move.typ == 'down':
-                    self.character.move_down()
-                elif move.typ == 'right':
-                    self.character.move_right()
-                self.past_move.add(move)
-        self.out = self.character.out
+            self.running = False
+            self.character.running = False
+
+        if self.running:
+            self.pos[0] += self.speed * dt
+
+            for move in self.timeline.moves:
+                if self.timeline.moves[move] <= self.pos[0] and move not in self.past_move:
+                    print move.typ
+                    if move.typ == 'up':
+                        self.character.move_up()
+                    elif move.typ == 'left':
+                        self.character.move_left()
+                    elif move.typ == 'down':
+                        self.character.move_down()
+                    elif move.typ == 'right':
+                        self.character.move_right()
+                    self.past_move.add(move)
+            self.out = self.character.out
 
     def toggle_pause(self):
         if not self.out:
