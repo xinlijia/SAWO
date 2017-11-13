@@ -27,7 +27,7 @@ class MoveIcon(pygame.sprite.Sprite):
     def set_rect_pos(self):
         self.rect.topleft = (self.pos[0],  self.pos[1])
 
-    def update(self, dt):
+    def update(self):
         if self.is_drag:
             mouse_pos = pygame.mouse.get_pos()
             self.pos[0] = mouse_pos[0] + self.off_set_x
@@ -57,7 +57,7 @@ class MoveBar(pygame.sprite.Sprite):
         for i, icon in enumerate(self.icons):
             icon.pos = [self.pos[0] + 10*const.SCALE + 30*const.SCALE*i, self.pos[1] + 3*const.SCALE]
 
-    def update(self, dt):
+    def update(self):
         self.rect.topleft = (self.pos[0], self.pos[1])
 
 
@@ -75,7 +75,7 @@ class ClickIcon(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image, (int(w*0.03*const.SCALE), int(h*0.03*const.SCALE)))
         self.con = pygame.sprite.RenderUpdates(self)
         self.rect = self.image.get_rect()
-    def update(self, dt, mouse_pos):
+    def update(self, mouse_pos):
         self.rect.topleft = (self.pos[0], self.pos[1])
         #mouse_pos = pygame.mouse.get_pos()
         if self.rect.collidepoint(mouse_pos):
@@ -115,7 +115,7 @@ class HelpLayer(pygame.sprite.Sprite):
         #self.rect = Rect(1,1,0,0)
         pass
 
-    def update(self, dt):
+    def update(self):
         pass
 
 
@@ -131,7 +131,7 @@ class CharacterTimeline(pygame.sprite.Sprite):
         self.con = pygame.sprite.RenderUpdates(self)
         self.moves = {} # key move, value time
 
-    def update(self, dt):
+    def update(self):
         self.rect.topleft = (self.pos[0], self.pos[1])
 
     def add_move(self, move, time):
@@ -274,7 +274,7 @@ class Maze(pygame.sprite.Sprite):
 
 
 
-    def update(self, dt):
+    def update(self):
         self.rect.topleft = (self.pos[0], self.pos[1])
 
     def reset(self):
@@ -311,7 +311,7 @@ class ControlPannel(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.doors = []
 
-    def update(self, dt):
+    def update(self):
         self.rect.topleft = (self.pos[0], self.pos[1])
 
     def add_door(self, door):
@@ -331,7 +331,7 @@ class ControlDoor(pygame.sprite.Sprite):
         self.is_open = False
         self.rect = self.image.get_rect()
 
-    def update(self, dt):
+    def update(self):
         self.rect.topleft = (self.pos[0], self.pos[1])
 
     def toggle(self):
@@ -364,7 +364,7 @@ class Exit(pygame.sprite.Sprite):
         self.con = pygame.sprite.RenderUpdates(self)
         self.rect = self.image.get_rect()
 
-    def update(self, dt):
+    def update(self):
         self.rect.topleft = (self.pos[0], self.pos[1])
 
 class Brick(pygame.sprite.Sprite):
@@ -381,7 +381,7 @@ class Brick(pygame.sprite.Sprite):
         self.con = pygame.sprite.RenderUpdates(self)
         self.rect = self.image.get_rect()
 
-    def update(self, dt):
+    def update(self):
         self.rect.topleft = (self.pos[0], self.pos[1])
 
 class ToolIcon(pygame.sprite.Sprite):
@@ -403,7 +403,7 @@ class ToolIcon(pygame.sprite.Sprite):
     def set_rect_pos(self):
         self.rect.topleft = (self.pos[0],  self.pos[1])
 
-    def update(self, dt):
+    def update(self):
         if self.is_drag:
             mouse_pos = pygame.mouse.get_pos()
             self.pos[0] = mouse_pos[0] + self.off_set_x
@@ -436,7 +436,7 @@ class ToolBar(pygame.sprite.Sprite):
                 icon.pos = [self.pos[0] - icon.rect.width/2 + self.rect.width/2,
                             self.pos[1] + 10*const.SCALE +(icon.rect.height + 10*const.SCALE)*i]
 
-    def update(self, dt):
+    def update(self):
         self.rect.topleft = (self.pos[0], self.pos[1])
 
 class WinLayer(pygame.sprite.Sprite):
@@ -454,7 +454,7 @@ class WinLayer(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.con = pygame.sprite.RenderUpdates(self)
 
-    def update(self, dt):
+    def update(self):
         if self.scene.character.out:
             self.scene.points += 400 - self.scene.timeline_pointer.pos[0]
             points = self.scene.points
@@ -508,5 +508,5 @@ class HelpLayer(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.con = pygame.sprite.RenderUpdates(self)
 
-    def update(self, dt):
+    def update(self):
         self.rect.topleft = (self.pos[0], self.pos[1])
