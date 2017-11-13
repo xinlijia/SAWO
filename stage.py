@@ -14,6 +14,8 @@ class MoveIcon(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.typ = typ
         self.rect = self.image.get_rect()
+
+        # drag management
         self.is_drag = False
         self.off_set_x = 0
         self.off_set_y = 0
@@ -23,18 +25,16 @@ class MoveIcon(pygame.sprite.Sprite):
         self.con = pygame.sprite.RenderUpdates(self)
 
 
-
-    def set_rect_pos(self):
-        self.rect.topleft = (self.pos[0],  self.pos[1])
-
     def update(self):
         if self.is_drag:
             mouse_pos = pygame.mouse.get_pos()
             self.pos[0] = mouse_pos[0] + self.off_set_x
             self.pos[1] = mouse_pos[1] + self.off_set_y
+        self.rect.topleft = (self.pos[0],  self.pos[1])
 
-        self.set_rect_pos()
 
+# TODO: change color when mouse drag is on (point to)
+# TODO: hide and reveal when mouse approach
 class MoveBar(pygame.sprite.Sprite):
     def __init__(self, pos):
         pygame.sprite.Sprite.__init__(self)
@@ -50,7 +50,6 @@ class MoveBar(pygame.sprite.Sprite):
         self.icons.append(icon)
         for i, icon in enumerate(self.icons):
             icon.pos = [self.pos[0] + 10*const.SCALE + 30*const.SCALE*i, self.pos[1] + 3*const.SCALE]
-        #print self.icons
 
     def remove_icon(self, icon):
         self.icons.remove(icon)
@@ -62,8 +61,7 @@ class MoveBar(pygame.sprite.Sprite):
 
 
 
-    # TODO: change color when mouse drag is on
-    # TODO: hide and reveal when mouse approach
+
 
 class ClickIcon(pygame.sprite.Sprite):
     def __init__(self, pos, typ):
@@ -103,20 +101,6 @@ class ClickIcon(pygame.sprite.Sprite):
         self.image = pygame.image.load('image/'+ self.typ +'_icon.png').convert_alpha()
         w,h = self.image.get_size()
         self.image = pygame.transform.scale(self.image, (int(w*0.03*const.SCALE), int(h*0.03*const.SCALE)))
-
-
-class HelpLayer(pygame.sprite.Sprite):
-    def __init__(self, pos, scene):
-        pygame.sprite.Sprite.__init__(self)
-        self.pos = list(pos)
-        self.scene = scene
-        self.con = pygame.sprite.RenderUpdates(self)
-        #self.image
-        #self.rect = Rect(1,1,0,0)
-        pass
-
-    def update(self):
-        pass
 
 
 
@@ -400,16 +384,14 @@ class ToolIcon(pygame.sprite.Sprite):
         self.in_move_bar = True
         self.in_timeline = False
         self.con = pygame.sprite.RenderUpdates(self)
-    def set_rect_pos(self):
-        self.rect.topleft = (self.pos[0],  self.pos[1])
 
     def update(self):
         if self.is_drag:
             mouse_pos = pygame.mouse.get_pos()
             self.pos[0] = mouse_pos[0] + self.off_set_x
             self.pos[1] = mouse_pos[1] + self.off_set_y
+        self.rect.topleft = (self.pos[0],  self.pos[1])
 
-        self.set_rect_pos()
 
 class ToolBar(pygame.sprite.Sprite):
     def __init__(self, pos):
@@ -502,7 +484,7 @@ class HelpLayer(pygame.sprite.Sprite):
             icon = pygame.image.load("image/tool-" + tool.typ + ".png").convert_alpha()
             w,h = icon.get_size()
             icon = pygame.transform.scale(icon, (int(w*const.SCALE/2), int(h*const.SCALE/2)))
-            self.image.blit(icon, (15, 25 + i))
+            self.image.blit(icon, (20, 30 + i))
             i += 30
 
         self.rect = self.image.get_rect()
