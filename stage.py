@@ -49,13 +49,13 @@ class MoveBar(pygame.sprite.Sprite):
     def add_icon(self, icon):
         self.icons.append(icon)
         for i, icon in enumerate(self.icons):
-            icon.pos = [self.pos[0] + 3*const.SCALE, self.pos[1] + 10*const.SCALE + 30*const.SCALE*i]
+            icon.pos = [self.pos[0] + 10*const.SCALE + 30*const.SCALE*i, self.pos[1] + 3*const.SCALE]
         #print self.icons
 
     def remove_icon(self, icon):
         self.icons.remove(icon)
         for i, icon in enumerate(self.icons):
-            icon.pos = [self.pos[0] + 3*const.SCALE, self.pos[1] + 10*const.SCALE + 30*const.SCALE*i]
+            icon.pos = [self.pos[0] + 10*const.SCALE + 30*const.SCALE*i, self.pos[1] + 3*const.SCALE]
 
     def update(self, dt):
         self.rect.topleft = (self.pos[0], self.pos[1])
@@ -160,16 +160,15 @@ class TimelinePointer(pygame.sprite.Sprite):
         self.timeline = timeline
         self.running = False
         self.past_move = set()
-        self.out = False
         self.speed = 100
 
     def update(self, dt):
         # TODO: modifiable time line scale
         self.rect.topleft = (self.pos[0], self.pos[1])
 
-        if self.out:
+        if self.character.out:
             return
-        if self.pos[0] > self.timeline.pos[0] + self.timeline.rect.width - self.rect.width/2:
+        if self.pos[0] + self.speed * dt > self.timeline.pos[0] + self.timeline.rect.width - self.rect.width/2:
             self.pos[0] = self.timeline.pos[0] + self.timeline.rect.width - self.rect.width/2
             self.running = False
             self.character.running = False
@@ -189,13 +188,11 @@ class TimelinePointer(pygame.sprite.Sprite):
                     elif move.typ == 'right':
                         self.character.move_right()
                     self.past_move.add(move)
-            self.out = self.character.out
 
     def toggle_pause(self):
-        if not self.out:
+        if not self.character.out:
             self.running = not self.running
     def reset(self):
-        self.out = False
         self.running = 0
         self.pos = list(self.original_pos)
         self.past_move = set()
@@ -458,11 +455,15 @@ class WinLayer(pygame.sprite.Sprite):
         self.con = pygame.sprite.RenderUpdates(self)
 
     def update(self, dt):
-        points = 1000
-        if points > 900:
-            self.scene.rating = 3
-        else:
-            self.scene.rating = points//300
+        if self.scene.character.out:
+            self.scene.points += 400 - self.scene.timeline_pointer.pos[0]
+            points = self.scene.points
+            if points > 900:
+                self.scene.rating = 3
+            elif points//300 > self.scene.rating:
+                self.scene.rating = int(points//300)
+            elif self.scene.rating == 0:
+                self.scene.rating = 1
         image_rating = pygame.image.load('image/{0}star.png'.format(self.scene.rating)).convert_alpha()
         image_win_layer = pygame.image.load('image/win_layer.png').convert_alpha()
         self.image = image_win_layer.copy()

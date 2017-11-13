@@ -422,15 +422,16 @@ class Scene(object):
         self.bg = pygame.image.load('image/bg.png').convert_alpha()
         w,h = self.bg.get_size()
         self.bg = pygame.transform.scale(self.bg, (int(w*const.WSCALE), int(h*const.HSCALE)))
-        self.move_bar = MoveBar((10*const.WSCALE, 50*const.HSCALE))
+        self.move_bar = MoveBar((40*const.WSCALE, 340*const.HSCALE))
 
-        self.tool_bar = ToolBar((50*const.WSCALE, 50*const.HSCALE))
+        self.tool_bar = ToolBar((50*const.WSCALE, 60*const.HSCALE))
 
-        self.character_timeline = CharacterTimeline((50*const.WSCALE, 320*const.HSCALE))
+        self.character_timeline = CharacterTimeline((67*const.WSCALE, 320*const.HSCALE))
         self.stage_id = stage_id
         self.rating = 0
+        self.points = 1000
         self.character = Character((0,0), self)
-        self.maze = Maze((110*const.WSCALE, 30*const.HSCALE), self, stage_id)
+        self.maze = Maze((100*const.WSCALE, 50*const.HSCALE), self, stage_id)
 
         back_icon = ClickIcon((10*const.WSCALE, 20*const.HSCALE), 'back')
         reset_icon = ClickIcon((40*const.WSCALE, 20*const.HSCALE), 'reset')
@@ -578,7 +579,7 @@ class Scene(object):
             self.maze.reset()
             self.character.reset()
             self.control_icon.reset()
-
+            self.points -= 100
     def on_mouseup(self, event):
         for item in self.mouse_interactable:
             if isinstance(item, MoveIcon):
@@ -667,6 +668,7 @@ class Scene(object):
                     self.maze.reset()
                     self.character.reset()
                     self.control_icon.reset()
+                    self.points -= 100
                 elif item.typ == 'start' or item.typ == 'pause':
                     self.timeline_pointer.toggle_pause()
                     self.character.toggle_pause()
@@ -883,6 +885,7 @@ class Character(pygame.sprite.Sprite):
                             c.toggle()
                     self.on_panel = True
                 elif isinstance(ob, Exit):
+                    # TODO: more accurate
                     self.out = True
                     print 'out'
                 elif isinstance(ob, Brick):
